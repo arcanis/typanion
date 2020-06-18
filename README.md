@@ -75,6 +75,28 @@ const movie = type.object({
 });
 ```
 
+## API
+
+### Type predicates
+
+- `array(spec)` will ensure that the values are arrays whose values all match the specified schema.
+
+- `cascade(spec, [specA, specB, ...])` will ensure that the values all match `spec` and, if they do, run the followup validations as well. Since those followups will not contribute to the inference (only the lead schema will), you'll typically want to put here anything that's a logical validation, rather than a typed one (cf the [Cascading Predicates]() section).
+
+- `literal(value)` will ensure that the values are strictly equal to the specified expected value. It's an handy tool that you can combine with `oneOf` and `object` to parse structures similar to Redux actions, etc.
+
+- `object(props)` will ensure that the values are plain old objects whose properties match the given shape.
+
+- `oneOf([specA, specB])` will ensure that the values all match any of the provided schema. As a result, the inferred type is the union of all candidates.
+
+- `string()` will ensure that the values are all regular strings.
+
+### Cascading predicates:
+
+- `maxLength` will ensure that the values all have a `length` property at most equal to the specified value.
+
+- `minLength` will ensure that the values all have a `length` property at least equal to the specified value.
+
 ## License (MIT)
 
 > **Copyright © 2019 Mael Nison**
