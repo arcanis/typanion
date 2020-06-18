@@ -83,7 +83,7 @@ const movie = type.object({
 
 - `cascade(spec, [specA, specB, ...])` will ensure that the values all match `spec` and, if they do, run the followup validations as well. Since those followups will not contribute to the inference (only the lead schema will), you'll typically want to put here anything that's a logical validation, rather than a typed one (cf the [Cascading Predicates](#Cascading-predicate) section).
 
-- `literal(value)` will ensure that the values are strictly equal to the specified expected value. It's an handy tool that you can combine with `oneOf` and `object` to parse structures similar to Redux actions, etc.
+- `literal(value)` will ensure that the values are strictly equal to the specified expected value. It's an handy tool that you can combine with `oneOf` and `object` to parse structures similar to Redux actions, etc. Note that you'll need to annotate your value with `as const` in order to let TypeScript know that the exact value matters (otherwise it'll cast it to `string` instead).
 
 - `object(props)` will ensure that the values are plain old objects whose properties match the given shape.
 
