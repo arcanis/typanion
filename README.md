@@ -1,6 +1,6 @@
 # Clipanion
 
-> Type-safe CLI library with no dependencies
+> Static and runtime type assertion library with no dependencies
 
 [![](https://img.shields.io/npm/v/typanion.svg)]() [![](https://img.shields.io/npm/l/typanion.svg)]() [![](https://img.shields.io/badge/developed%20with-Yarn%202-blue)](https://github.com/yarnpkg/berry)
 
