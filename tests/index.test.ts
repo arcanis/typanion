@@ -1,11 +1,11 @@
-import {expect}                  from 'chai';
-import {string, Validator, literal, object, array} from '../sources';
+import {expect} from 'chai';
+import * as t   from '../sources';
 
-const validators: {
-  validator: () => Validator<unknown, any>;
+const VALIDATION_TESTS: {
+  validator: () => t.StrictValidator<unknown, any>;
   tests: [unknown, boolean][];
 }[] = [{
-  validator: () => string(),
+  validator: () => t.isString(),
   tests: [
     [42, false],
     [`foo`, true],
@@ -13,39 +13,56 @@ const validators: {
     [null, false],
   ],
 }, {
-  validator: () => literal(`foo`),
+  validator: () => t.isLiteral(`foo`),
   tests: [
     [42, false],
     [`foo`, true],
     [`bar`, false],
   ],
 }, {
-  validator: () => literal(42),
+  validator: () => t.isLiteral(42),
   tests: [
     [21, false],
     [42, true],
     [`42`, false],
   ],
 }, {
-  validator: () => object({foo: string()}),
+  validator: () => t.isObject({foo: t.isString()}),
   tests: [
     [{}, false],
     [{foo: `hello`}, true],
     [{foo: 42}, false],
+    [{foo: `hello`, bar: `test`}, false],
     [{bar: `test`}, false],
   ],
 }, {
-  validator: () => array(string()),
+  validator: () => t.isArray(t.isString()),
   tests: [
     [{}, false],
     [[], true],
     [[`foo`], true],
     [[42], false],
   ],
+}, {
+  validator: () => t.isOneOf([t.isObject({foo: t.isString()}, {allowUnknownKeys: true}), t.isObject({bar: t.isString()}, {allowUnknownKeys: true})]),
+  tests: [
+    [{foo: `foo`}, true],
+    [{bar: `bar`}, true],
+    [{baz: `baz`}, false],
+    [{foo: `foo`, bar: `bar`}, true],
+  ],
+}, {
+  validator: () => t.isOneOf([t.isObject({foo: t.isString()}, {allowUnknownKeys: true}), t.isObject({bar: t.isString()}, {allowUnknownKeys: true})], {exclusive: true}),
+  tests: [
+    [{foo: `foo`}, true],
+    [{bar: `bar`}, true],
+    [{baz: `baz`}, false],
+    [{foo: `foo`, bar: `bar`}, false],
+  ],
 }];
 
-for (const {validator, tests} of validators) {
-  describe(`${validator.toString()}`, () => {
+for (const {validator, tests} of VALIDATION_TESTS) {
+  describe(`Validation for ${validator.toString()}`, () => {
     const schema = validator();
 
     for (const [value, expectation] of tests) {
@@ -55,6 +72,48 @@ for (const {validator, tests} of validators) {
 
       it(`it should ${what} ${JSON.stringify(value)}`, () => {
         expect(schema(value)).to.equal(expectation);
+      });
+    }
+  });
+}
+
+const ERROR_TESTS: {
+  validator: () => t.StrictValidator<unknown, any>;
+  tests: [unknown, string[]][];
+}[] = [{
+  validator: () => t.isString(),
+  tests: [
+    [42, [`.: Expected a string`]],
+  ],
+}, {
+  validator: () => t.isObject({foo: t.isString()}),
+  tests: [
+    [{}, [`.foo: Expected a string`]],
+    [{foo: ``, bar: ``}, [`.bar: Extraneous property`]],
+    [{foo: ``, [`foo bar`]: ``}, [`.["foo bar"]: Extraneous property`]],
+  ],
+}, {
+  validator: () => t.isOneOf([t.isString(), t.isBoolean()]),
+  tests: [
+    [42, [`.#1: Expected a string`, `.#2: Expected a boolean`]],
+    [true, []],
+  ],
+}];
+
+for (const {validator, tests} of ERROR_TESTS) {
+  describe(`Errors for ${validator.toString()}`, () => {
+    const schema = validator();
+
+    for (const [value, expectations] of tests) {
+      const what = expectations.length !== 1
+        ? `errors`
+        : `error`;
+
+      it(`Report the right ${what} for ${JSON.stringify(value)}`, () => {
+        const errors: string[] = [];
+
+        expect(schema(value, errors)).to.equal(expectations.length === 0);
+        expect(errors).to.deep.equal(expectations);
       });
     }
   });

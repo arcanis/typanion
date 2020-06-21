@@ -15,19 +15,18 @@ yarn add typanion
   - Typanion can validate nested arbitrary data structures
   - Typanion is type-safe; it uses [type predicates](https://www.typescriptlang.org/docs/handbook/advanced-types.html#user-defined-type-guards)
   - Typanion allows you to derive types from your schemas
-
-Note: Typanion's standard library isn't huge at the moment (mostly strings, arrays, shapes), more types are expected in future versions.
+  - Typanion can report detailed error reports
 
 ## Usage
 
 First define a schema using the builtin operators:
 
 ```ts
-import * as type from 'typanion';
+import * as t from 'typanion';
 
-const movie = type.object({
-    title: type.string(),
-    description: type.string(),
+const isMovie = t.isObject({
+    title: t.isString(),
+    description: t.isString(),
 });
 ```
 
@@ -36,22 +35,33 @@ Then just call the schema to validate any `unknown` value:
 ```ts
 const userData = JSON.parse(input);
 
-if (movie(userData)) {
+if (isMovie(userData)) {
     console.log(userData.title);
+}
+```
+
+Passing a second parameter allows you to retrieve detailed errors:
+
+```ts
+const userData = JSON.parse(input);
+const errors: string[] = [];
+
+if (!isMovie(userData, errors)) {
+    console.log(errors);
 }
 ```
 
 You can derive the type from the schema for use in other functions:
 
 ```ts
-import * as type from 'typanion';
+import * as t from 'typanion';
 
-const movie = type.object({
-    title: type.string(),
-    description: type.string(),
+const isMovie = t.isObject({
+    title: t.isString(),
+    description: t.isString(),
 });
 
-type Movie = type.InferType<typeof movie>;
+type Movie = t.InferType<typeof isMovie>;
 
 // Then just use your alias:
 const printMovie = (movie: Movie) => {
@@ -62,16 +72,16 @@ const printMovie = (movie: Movie) => {
 Types can be kept in separate variables if needed:
 
 ```ts
-import * as type from 'typanion';
+import * as t from 'typanion';
 
-const actor = type.object({
-    name: type.string();
+const isActor = t.isObject({
+    name: t.isString();
 });
 
-const movie = type.object({
-    title: type.string(),
-    description: type.string(),
-    actors: type.array(actor),
+const isMovie = t.isObject({
+    title: t.isString(),
+    description: t.isString(),
+    actors: t.isArray(isActor),
 });
 ```
 
@@ -79,23 +89,55 @@ const movie = type.object({
 
 ### Type predicates
 
-- `array(spec)` will ensure that the values are arrays whose values all match the specified schema.
+- `isArray(spec)` will ensure that the values are arrays whose values all match the specified schema.
 
-- `cascade(spec, [specA, specB, ...])` will ensure that the values all match `spec` and, if they do, run the followup validations as well. Since those followups will not contribute to the inference (only the lead schema will), you'll typically want to put here anything that's a logical validation, rather than a typed one (cf the [Cascading Predicates](#Cascading-predicate) section).
+- `isBoolean()` will ensure that the values are all booleans. Note that to specifically check for either `true` or `false`, you can look for `isLiteral`.
 
-- `literal(value)` will ensure that the values are strictly equal to the specified expected value. It's an handy tool that you can combine with `oneOf` and `object` to parse structures similar to Redux actions, etc. Note that you'll need to annotate your value with `as const` in order to let TypeScript know that the exact value matters (otherwise it'll cast it to `string` instead).
+- `isLiteral(value)` will ensure that the values are strictly equal to the specified expected value. It's an handy tool that you can combine with `oneOf` and `object` to parse structures similar to Redux actions, etc. Note that you'll need to annotate your value with `as const` in order to let TypeScript know that the exact value matters (otherwise it'll cast it to `string` instead).
 
-- `object(props)` will ensure that the values are plain old objects whose properties match the given shape.
+- `isNumber()` will ensure that the values are all numbers.
 
-- `oneOf([specA, specB])` will ensure that the values all match any of the provided schema. As a result, the inferred type is the union of all candidates.
+- `isObject(props)` will ensure that the values are plain old objects whose properties match the given shape.
 
-- `string()` will ensure that the values are all regular strings.
+- `isString()` will ensure that the values are all regular strings.
+
+- `isUnknown()` will accept whatever is the input without validating it, but without refining the type inference either. Note that by default `isUnknown` will forbid `undefined` and `null`, but this can be switched off by explicitly allowing them via `isOptional` and `isNullable`.
+
+### Helper predicates
+
+- `applyCascade(spec, [specA, specB, ...])` will ensure that the values all match `spec` and, if they do, run the followup validations as well. Since those followups will not contribute to the inference (only the lead schema will), you'll typically want to put here anything that's a logical validation, rather than a typed one (cf the [Cascading Predicates](#Cascading-predicate) section).
+
+- `isOneOf([specA, specB])` will ensure that the values all match any of the provided schema. As a result, the inferred type is the union of all candidates. The predicate supports an option, `exclusive`, which ensures that only one variant matches.
+
+- `isOptional(spec)` will add `undefined` as an allowed value for the given specification.
+
+- `isNullable(spec)` will add `null` as an allowed value for the given specification.
 
 ### Cascading predicates
 
-- `maxLength` will ensure that the values all have a `length` property at most equal to the specified value.
+- `hasExactLength` will ensure that the values all have a `length` property exactly equal to the specified threshold.
 
-- `minLength` will ensure that the values all have a `length` property at least equal to the specified value.
+- `hasMaxLength` will ensure that the values all have a `length` property at most equal to the specified value.
+
+- `hasMinLength` will ensure that the values all have a `length` property at least equal to the specified value.
+
+- `isAtLeast` will ensure that the values compare positively with the specified value.
+
+- `isAtMost` will ensure that the values compare positively with the specified value.
+
+- `isInExclusiveRange` will ensure that the values compare positively with the specified value.
+
+- `isInInclusiveRange` will ensure that the values compare positively with the specified value.
+
+- `isInteger` will ensure that the values are round integers.
+
+- `isLowerCase` will ensure that the values only contain lowercase characters.
+
+- `isUpperCase` will ensure that the values only contain uppercase characters.
+
+- `isUUID4` will ensure that the values are valid UUID 4 strings.
+
+- `matchesRegExp` will ensure that the values all match the given regular expression.
 
 ## License (MIT)
 

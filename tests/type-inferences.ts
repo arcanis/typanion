@@ -1,7 +1,7 @@
-import {array, string, InferType} from '../sources';
+import * as t from '../sources';
 
-const schema = array(string());
-type MyType = InferType<typeof schema>;
+const schema = t.isArray(t.isString());
+type MyType = t.InferType<typeof schema>;
 
 // @ts-expect-error
 const foo: MyType = 42;
