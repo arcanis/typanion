@@ -59,6 +59,30 @@ const VALIDATION_TESTS: {
     [{baz: `baz`}, false],
     [{foo: `foo`, bar: `bar`}, false],
   ],
+}, {
+  validator: () => t.isOptional(t.isString()),
+  tests: [
+    [`foo`, true],
+    [undefined, true],
+    [42, false],
+    [null, false],
+  ],
+}, {
+  validator: () => t.isNullable(t.isString()),
+  tests: [
+    [`foo`, true],
+    [undefined, false],
+    [42, false],
+    [null, true],
+  ],
+}, {
+  validator: () => t.isOptional(t.isNullable(t.isString())),
+  tests: [
+    [`foo`, true],
+    [undefined, true],
+    [42, false],
+    [null, true],
+  ],
 }];
 
 for (const {validator, tests} of VALIDATION_TESTS) {
@@ -83,19 +107,19 @@ const ERROR_TESTS: {
 }[] = [{
   validator: () => t.isString(),
   tests: [
-    [42, [`.: Expected a string`]],
+    [42, [`.: Expected a string (got 42)`]],
   ],
 }, {
   validator: () => t.isObject({foo: t.isString()}),
   tests: [
-    [{}, [`.foo: Expected a string`]],
-    [{foo: ``, bar: ``}, [`.bar: Extraneous property`]],
-    [{foo: ``, [`foo bar`]: ``}, [`.["foo bar"]: Extraneous property`]],
+    [{}, [`.foo: Expected a string (got undefined)`]],
+    [{foo: ``, bar: ``}, [`.bar: Extraneous property (got an empty string)`]],
+    [{foo: ``, [`foo bar`]: ``}, [`.["foo bar"]: Extraneous property (got an empty string)`]],
   ],
 }, {
   validator: () => t.isOneOf([t.isString(), t.isBoolean()]),
   tests: [
-    [42, [`.#1: Expected a string`, `.#2: Expected a boolean`]],
+    [42, [`.#1: Expected a string (got 42)`, `.#2: Expected a boolean (got 42)`]],
     [true, []],
   ],
 }];

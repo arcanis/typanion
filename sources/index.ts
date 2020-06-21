@@ -22,6 +22,17 @@ export function makeValidator<U, V extends U>({test}: {test: StrictTest<U, V> | 
   return makeTrait(test)<V>();
 }
 
+export function getPrintable(value: unknown) {
+  if (value === null)
+    return `null`;
+  if (value === undefined)
+    return `undefined`;
+  if (value === ``)
+    return `an empty string`;
+
+  return JSON.stringify(value);
+}
+
 export function addKey(p: string | undefined, key: string | number) {
   if (typeof key === `number`) {
     return `${p ?? `.`}[${key}]`
@@ -48,7 +59,7 @@ export const isLiteral = <T>(expected: T) => makeValidator<unknown, T>({
     const res = value === expected;
 
     if (!res)
-      pushError(errors, p, `Expected a literal`);
+      pushError(errors, p, `Expected a literal (got ${getPrintable(expected)})`);
 
     return res;
   },
@@ -59,7 +70,7 @@ export const isString = () => makeValidator<unknown, string>({
     const res = typeof value === `string`;
 
     if (!res)
-      pushError(errors, p, `Expected a string`);
+      pushError(errors, p, `Expected a string (got ${getPrintable(value)})`);
 
     return res;
   },
@@ -70,7 +81,7 @@ export const isBoolean = () => makeValidator<unknown, boolean>({
     const res = typeof value === `boolean`;
 
     if (!res)
-      pushError(errors, p, `Expected a boolean`);
+      pushError(errors, p, `Expected a boolean (got ${getPrintable(value)})`);
 
     return res;
   },
@@ -81,7 +92,7 @@ export const isNumber = () => makeValidator<unknown, boolean>({
     const res = typeof value === `number`;
 
     if (!res)
-      pushError(errors, p, `Expected a number`);
+      pushError(errors, p, `Expected a number (got ${getPrintable(value)})`);
 
     return res;
   },
@@ -90,7 +101,7 @@ export const isNumber = () => makeValidator<unknown, boolean>({
 export const isArray = <T extends AnyStrictValidator>(spec: T) => makeValidator<unknown, Array<InferType<T>>>({
   test: (value, errors, p): value is Array<InferType<T>> => {
     if (!Array.isArray(value))
-      return pushError(errors, p, `Expected an array`);
+      return pushError(errors, p, `Expected an array (got ${getPrintable(value)})`);
 
     let valid = true;
     for (let t = 0, T = value.length; t < T; ++t)
@@ -110,7 +121,7 @@ export const isObject = <T extends {[P in keyof T]: AnyStrictValidator}>(props: 
   return makeValidator<unknown, {[P in keyof T]: InferType<(typeof props)[P]>}>({
     test: (value, errors, p): value is {[P in keyof T]: InferType<(typeof props)[P]>} => {
       if (typeof value !== `object` || value === null)
-        return pushError(errors, p, `Expected an object`);
+        return pushError(errors, p, `Expected an object (got ${getPrintable(value)})`);
 
       const keys = new Set([
         ...specKeys,
@@ -125,7 +136,7 @@ export const isObject = <T extends {[P in keyof T]: AnyStrictValidator}>(props: 
         if (typeof spec !== `undefined`) {
           valid = spec(sub, errors, addKey(p, key)) && valid;
         } else if (!allowUnknownKeys) {
-          valid = pushError(errors, addKey(p, key), `Extraneous property`);
+          valid = pushError(errors, addKey(p, key), `Extraneous property (got ${getPrintable(sub)})`);
         }
       }
 
@@ -142,7 +153,7 @@ export const isOneOf = <T extends AnyStrictValidator>(specs: Array<T>, {
   test: (value, errors, p): value is InferType<T> => {
     let valid = true;
 
-    const matches: number[] = [];
+    const matches: string[] = [];
     const errorBuffer = typeof errors !== `undefined`
       ? [] : undefined;
 
@@ -151,7 +162,7 @@ export const isOneOf = <T extends AnyStrictValidator>(specs: Array<T>, {
         ? [] : undefined;
 
       if (specs[t](value, subErrors, `${p ?? `.`}#${t + 1}`)) {
-        matches.push(t + 1);
+        matches.push(`#${t + 1}`);
         if (!exclusive) {
           break;
         }
@@ -164,7 +175,7 @@ export const isOneOf = <T extends AnyStrictValidator>(specs: Array<T>, {
       return true;
 
     if (matches.length > 1)
-      pushError(errors, p, `Expected to match exactly a single predicate`);
+      pushError(errors, p, `Expected to match exactly a single predicate (matched ${matches.join(`, `)})`);
     else
       errors?.push(...errorBuffer!);
 
@@ -193,7 +204,7 @@ export const isOptional = <T extends AnyStrictValidator>(spec: T) => makeValidat
 });
 
 export const isNullable = <T extends AnyStrictValidator>(spec: T) => makeValidator<unknown, InferType<T> | null>({
-  test: (value, errors, p): value is InferType<T> | undefined => {
+  test: (value, errors, p): value is InferType<T> | null => {
     if (value === null)
       return true;
 
@@ -206,7 +217,7 @@ export const hasMinLength = <T extends {length: number}>(length: number) => make
     const res = value.length >= length;
 
     if (!res)
-      pushError(errors, p, `Expected to have a length of at least ${length} elements`);
+      pushError(errors, p, `Expected to have a length of at least ${length} elements (got ${value.length})`);
 
     return res;
   },
@@ -217,7 +228,7 @@ export const hasMaxLength = <T extends {length: number}>(length: number) => make
     const res = value.length <= length;
 
     if (!res)
-      pushError(errors, p, `Expected to have a length of at most ${length} elements`);
+      pushError(errors, p, `Expected to have a length of at most ${length} elements (got ${value.length})`);
 
     return res;
   },
@@ -228,7 +239,7 @@ export const hasExactLength = <T extends {length: number}>(length: number) => ma
     const res = value.length <= length;
 
     if (!res)
-      pushError(errors, p, `Expected to have a length of exactly ${length} elements`);
+      pushError(errors, p, `Expected to have a length of exactly ${length} elements (got ${value.length})`);
 
     return res;
   },
@@ -239,7 +250,7 @@ export const isAtLeast = (n: number) => makeValidator<number, number>({
     const res = value >= n;
 
     if (!res)
-      pushError(errors, p, `Expected to be at least ${n}`);
+      pushError(errors, p, `Expected to be at least ${n} (got ${value})`);
 
     return res;
   },
@@ -250,7 +261,7 @@ export const isAtMost = (n: number) => makeValidator<number, number>({
     const res = value <= n;
 
     if (!res)
-      pushError(errors, p, `Expected to be at most ${n}`);
+      pushError(errors, p, `Expected to be at most ${n} (got ${value})`);
 
     return res;
   },
@@ -261,7 +272,7 @@ export const isInInclusiveRange = (a: number, b: number) => makeValidator<number
     const res = value >= a && value <= b;
 
     if (!res)
-      pushError(errors, p, `Expected to be in the [${a}; ${b}] range`);
+      pushError(errors, p, `Expected to be in the [${a}; ${b}] range (got ${value})`);
 
     return res;
   },
@@ -272,7 +283,7 @@ export const isInExclusiveRange = (a: number, b: number) => makeValidator<number
     const res = value >= a && value < b;
 
     if (!res)
-      pushError(errors, p, `Expected to be in the [${a}; ${b}[ range`);
+      pushError(errors, p, `Expected to be in the [${a}; ${b}[ range (got ${value})`);
 
     return res;
   },
@@ -283,7 +294,7 @@ export const isInteger = (a: number, b: number) => makeValidator<number, number>
     const res = value === Math.round(value);
 
     if (!res)
-      pushError(errors, p, `Expected to be an integer`);
+      pushError(errors, p, `Expected to be an integer (got ${value})`);
 
     return res;
   },
@@ -294,7 +305,7 @@ export const matchesRegExp = (regExp: RegExp) => makeValidator<string, string>({
     const res = regExp.test(value);
 
     if (!res)
-      pushError(errors, p, `Expected to match the pattern ${regExp.toString()}`);
+      pushError(errors, p, `Expected to match the pattern ${regExp.toString()} (got ${getPrintable(value)})`);
 
     return res;
   },
@@ -305,7 +316,7 @@ export const isLowerCase = () => makeValidator<string, string>({
     const res = value === value.toLowerCase();
 
     if (!res)
-      pushError(errors, p, `Expected to be all-lowercase`);
+      pushError(errors, p, `Expected to be all-lowercase (got ${value})`);
 
     return res;
   },
@@ -316,7 +327,7 @@ export const isUpperCase = () => makeValidator<string, string>({
     const res = value === value.toLowerCase();
 
     if (!res)
-      pushError(errors, p, `Expected to be all-uppercase`);
+      pushError(errors, p, `Expected to be all-uppercase (got ${value})`);
 
     return res;
   },
@@ -327,7 +338,7 @@ export const isUUID4 = () => makeValidator<string, string>({
     const res = uuid4RegExp.test(value);
 
     if (!res)
-      pushError(errors, p, `Expected to be a valid UUID v4`);
+      pushError(errors, p, `Expected to be a valid UUID v4 (got ${getPrintable(value)})`);
 
     return res;
   },
