@@ -1,4 +1,4 @@
-# Clipanion
+# Typanion
 
 > Static and runtime type assertion library with no dependencies
 
@@ -12,10 +12,12 @@ yarn add typanion
 
 ## Why
 
-  - Typanion can validate nested arbitrary data structures
-  - Typanion is type-safe; it uses [type predicates](https://www.typescriptlang.org/docs/handbook/advanced-types.html#user-defined-type-guards)
-  - Typanion allows you to derive types from your schemas
-  - Typanion can report detailed error reports
+- Typanion can validate nested arbitrary data structures
+- Typanion is type-safe; it uses [type predicates](https://www.typescriptlang.org/docs/handbook/advanced-types.html#user-defined-type-guards)
+- Typanion allows you to derive types from your schemas
+- Typanion can report detailed error reports
+
+Compared to [yup](https://github.com/jquense/yup), Typanion has a better inference support for TypeScript + supports `isOneOf`. It's functional API makes it very easy to tree shake, which is another bonus (although the library isn't very large in itself).
 
 ## Usage
 
@@ -51,7 +53,7 @@ if (!isMovie(userData, errors)) {
 }
 ```
 
-You can derive the type from the schema for use in other functions:
+You can derive the type from the schema and use it in other functions:
 
 ```ts
 import * as t from 'typanion';
@@ -69,7 +71,7 @@ const printMovie = (movie: Movie) => {
 };
 ```
 
-Types can be kept in separate variables if needed:
+Schemas can be stored in multiple variables if needed:
 
 ```ts
 import * as t from 'typanion';
@@ -115,7 +117,7 @@ const isMovie = t.isObject({
 
 ### Cascading predicates
 
-- `hasExactLength` will ensure that the values all have a `length` property exactly equal to the specified threshold.
+- `hasExactLength` will ensure that the values all have a `length` property exactly equal to the specified value.
 
 - `hasMaxLength` will ensure that the values all have a `length` property at most equal to the specified value.
 
@@ -141,7 +143,7 @@ const isMovie = t.isObject({
 
 ## License (MIT)
 
-> **Copyright © 2019 Mael Nison**
+> **Copyright © 2020 Mael Nison**
 >
 > Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 >
