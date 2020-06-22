@@ -30,7 +30,7 @@ const VALIDATION_TESTS: {
   validator: () => t.isNumber(),
   tests: [
     [false, false],
-    [21, false],
+    [21, true],
     [42, true],
     [`42`, false],
     [null, false],
