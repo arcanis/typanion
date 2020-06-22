@@ -27,6 +27,26 @@ const VALIDATION_TESTS: {
     [`42`, false],
   ],
 }, {
+  validator: () => t.isNumber(),
+  tests: [
+    [false, false],
+    [21, false],
+    [42, true],
+    [`42`, false],
+    [null, false],
+    [undefined, false],
+  ],
+}, {
+  validator: () => t.isBoolean(),
+  tests: [
+    [true, true],
+    [false, true],
+    [0, false],
+    [1, false],
+    [null, false],
+    [undefined, false],
+  ],
+}, {
   validator: () => t.isObject({foo: t.isString()}),
   tests: [
     [{}, false],

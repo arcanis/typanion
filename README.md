@@ -17,7 +17,7 @@ yarn add typanion
 - Typanion allows you to derive types from your schemas
 - Typanion can report detailed error reports
 
-Compared to [yup](https://github.com/jquense/yup), Typanion has a better inference support for TypeScript + supports `isOneOf`. It's functional API makes it very easy to tree shake, which is another bonus (although the library isn't very large in itself).
+Compared to [yup](https://github.com/jquense/yup), Typanion has a better inference support for TypeScript + supports `isOneOf`. Its functional API makes it very easy to tree shake, which is another bonus (although the library isn't very large in itself).
 
 ## Usage
 
@@ -134,6 +134,10 @@ const isMovie = t.isObject({
 - `isInteger` will ensure that the values are round integers.
 
 - `isLowerCase` will ensure that the values only contain lowercase characters.
+
+- `isNegative` will ensure that the values are at most 0.
+
+- `isPositive` will ensure that the values are at least 0.
 
 - `isUpperCase` will ensure that the values only contain uppercase characters.
 

@@ -1,8 +1,8 @@
 export type Trait<Type> = {__trait: Type};
 export type InferType<U> = U extends Trait<infer V> ? V : never;
 
-export type LooseTest<U> = (value: U, errors?: string[], p?: string) => boolean;
-export type StrictTest<U, V extends U> = (value: U, errors?: string[], p?: string) => value is V;
+export type LooseTest<U> = (value: U, errors?: string[] | null, p?: string) => boolean;
+export type StrictTest<U, V extends U> = (value: U, errors?: string[] | null, p?: string) => value is V;
 
 export type LooseValidator<U, V> = LooseTest<U> & Trait<V>;
 export type StrictValidator<U, V extends U> = StrictTest<U, V> & Trait<V>;
@@ -87,8 +87,8 @@ export const isBoolean = () => makeValidator<unknown, boolean>({
   },
 });
 
-export const isNumber = () => makeValidator<unknown, boolean>({
-  test: (value, errors, p): value is boolean => {
+export const isNumber = () => makeValidator<unknown, number>({
+  test: (value, errors, p): value is number => {
     const res = typeof value === `number`;
 
     if (!res)
@@ -240,6 +240,28 @@ export const hasExactLength = <T extends {length: number}>(length: number) => ma
 
     if (!res)
       pushError(errors, p, `Expected to have a length of exactly ${length} elements (got ${value.length})`);
+
+    return res;
+  },
+});
+
+export const isNegative = () => makeValidator<number, number>({
+  test: (value, errors, p) => {
+    const res = value <= 0;
+
+    if (!res)
+      pushError(errors, p, `Expected to be negative (got ${value})`);
+
+    return res;
+  },
+});
+
+export const isPositive = () => makeValidator<number, number>({
+  test: (value, errors, p) => {
+    const res = value >= 0;
+
+    if (!res)
+      pushError(errors, p, `Expected to be positive (got ${value})`);
 
     return res;
   },
