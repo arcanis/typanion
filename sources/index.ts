@@ -311,7 +311,7 @@ export const isInExclusiveRange = (a: number, b: number) => makeValidator<number
   },
 });
 
-export const isInteger = (a: number, b: number) => makeValidator<number, number>({
+export const isInteger = () => makeValidator<number, number>({
   test: (value, errors, p) => {
     const res = value === Math.round(value);
 
