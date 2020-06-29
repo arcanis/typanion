@@ -64,7 +64,14 @@ const VALIDATION_TESTS: {
     [[42], false],
   ],
 }, {
-  validator: () => t.isOneOf([t.isObject({foo: t.isString()}, {allowUnknownKeys: true}), t.isObject({bar: t.isString()}, {allowUnknownKeys: true})]),
+  validator: () => t.isObject({}, {allowUnknownKeys: t.isString()}),
+  tests: [
+    [{}, true],
+    [{foo: `foo`}, true],
+    [{foo: 42}, false],
+  ],
+}, {
+  validator: () => t.isOneOf([t.isObject({foo: t.isString()}, {allowUnknownKeys: t.isUnknown()}), t.isObject({bar: t.isString()}, {allowUnknownKeys: t.isUnknown()})]),
   tests: [
     [{foo: `foo`}, true],
     [{bar: `bar`}, true],
@@ -72,7 +79,7 @@ const VALIDATION_TESTS: {
     [{foo: `foo`, bar: `bar`}, true],
   ],
 }, {
-  validator: () => t.isOneOf([t.isObject({foo: t.isString()}, {allowUnknownKeys: true}), t.isObject({bar: t.isString()}, {allowUnknownKeys: true})], {exclusive: true}),
+  validator: () => t.isOneOf([t.isObject({foo: t.isString()}, {allowUnknownKeys: t.isUnknown()}), t.isObject({bar: t.isString()}, {allowUnknownKeys: t.isUnknown()})], {exclusive: true}),
   tests: [
     [{foo: `foo`}, true],
     [{bar: `bar`}, true],

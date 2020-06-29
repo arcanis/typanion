@@ -14,7 +14,7 @@ export default {
   ],
   plugins: [
     ts({
-      tsconfig: 'tsconfig.json'
+      tsconfig: 'tsconfig.build.json'
     }),
   ],
 };

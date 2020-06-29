@@ -99,7 +99,7 @@ const isMovie = t.isObject({
 
 - `isNumber()` will ensure that the values are all numbers.
 
-- `isObject(props)` will ensure that the values are plain old objects whose properties match the given shape.
+- `isObject(props)` will ensure that the values are plain old objects whose properties match the given shape. It accepts an option, `allowUnknownKeys`, which can be set to either `false` (the default) or another schema which will then be used to validate unknown keys (use `isUnknown` to accept any value without validating them first).
 
 - `isString()` will ensure that the values are all regular strings.
 

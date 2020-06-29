@@ -3,42 +3,59 @@ import * as t from '../sources';
 (foo: unknown) => {
     if (true) {
         // @ts-expect-error
-        foo.slice();
+        const bar: unknown[] = foo;
     }
     
     if (t.isArray(t.isUnknown())(foo)) {
-        foo.slice();
+        const bar: unknown[] = foo;
     }
 };
 
 {
-    const bar = [1, 2];
+    const foo = [1, 2];
 
-    if (t.hasMinLength(8)(bar)) {
-        bar.slice();
+    if (t.hasMinLength(8)(foo)) {
+        const bar: unknown[] = foo;
     } else {
-        bar.slice();
+        const bar: unknown[] = foo;
     }
 }
 
 (foo: unknown) => {
     if (true) {
         // @ts-expect-error
-        foo.slice();
+        const bar: number = foo;
     }
     
-    if (t.isArray(t.isUnknown())(foo)) {
-        foo.slice();
+    if (t.isNumber()(foo)) {
+        const bar: number = foo;
     }
 };
 
 (foo: unknown) => {
     if (true) {
         // @ts-expect-error
-        foo + 42;
+        const bar: boolean = foo;
     }
     
-    if (t.isNumber()(foo)) {
-        foo + 42;
+    if (t.isBoolean()(foo)) {
+        const bar: boolean = foo;
+    }
+};
+
+(foo: unknown) => {
+    if (true) {
+        // @ts-expect-error
+        const bar: number = foo;
+    }
+    
+    if (t.isObject({}, {allowUnknownKeys: t.isString()})(foo)) {
+        // @ts-expect-error
+        const bar: number = foo['bar'];
+    }
+    
+    if (t.isObject({}, {allowUnknownKeys: t.isString()})(foo)) {
+        // @ts-expect-error
+        const bar: string = foo['bar'];
     }
 };

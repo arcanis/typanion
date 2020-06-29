@@ -111,15 +111,17 @@ export const isArray = <T extends AnyStrictValidator>(spec: T) => makeValidator<
   },
 });
 
-export const isObject = <T extends {[P in keyof T]: AnyStrictValidator}>(props: T, {
-  allowUnknownKeys = false,
+type DeriveIndexUnlessNull<T> = T extends null ? {} : {[key: string]: T};
+
+export const isObject = <T extends {[P in keyof T]: AnyStrictValidator}, UnknownValidator extends AnyStrictValidator | null = null>(props: T, {
+  allowUnknownKeys = null,
 }: {
-  allowUnknownKeys?: boolean,
+  allowUnknownKeys?: UnknownValidator,
 } = {}) => {
   const specKeys = Object.keys(props);
 
-  return makeValidator<unknown, {[P in keyof T]: InferType<(typeof props)[P]>}>({
-    test: (value, errors, p): value is {[P in keyof T]: InferType<(typeof props)[P]>} => {
+  return makeValidator<unknown, {[P in keyof T]: InferType<(typeof props)[P]>} & DeriveIndexUnlessNull<UnknownValidator>>({
+    test: (value, errors, p): value is {[P in keyof T]: InferType<(typeof props)[P]>} & DeriveIndexUnlessNull<UnknownValidator> => {
       if (typeof value !== `object` || value === null)
         return pushError(errors, p, `Expected an object (got ${getPrintable(value)})`);
 
@@ -135,7 +137,7 @@ export const isObject = <T extends {[P in keyof T]: AnyStrictValidator}>(props: 
 
         if (typeof spec !== `undefined`) {
           valid = spec(sub, errors, addKey(p, key)) && valid;
-        } else if (!allowUnknownKeys) {
+        } else if (allowUnknownKeys === null || !allowUnknownKeys(sub)) {
           valid = pushError(errors, addKey(p, key), `Extraneous property (got ${getPrintable(sub)})`);
         }
       }

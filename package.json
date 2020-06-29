@@ -22,7 +22,7 @@
   "scripts": {
     "prepack": "rm -rf lib && rollup -c",
     "postpack": "rm -rf lib",
-    "test": "yarn tsc -p tsconfig.test.json && TS_NODE_TRANSPILE_ONLY=true mocha --require ts-node/register --extension ts tests/**/*.test.ts"
+    "test": "yarn tsc && TS_NODE_TRANSPILE_ONLY=true mocha --require ts-node/register --extension ts tests/**/*.test.ts"
   },
   "publishConfig": {
     "main": "lib/index"
