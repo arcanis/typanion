@@ -104,8 +104,14 @@ export const isArray = <T extends AnyStrictValidator>(spec: T) => makeValidator<
       return pushError(errors, p, `Expected an array (got ${getPrintable(value)})`);
 
     let valid = true;
-    for (let t = 0, T = value.length; t < T; ++t)
+
+    for (let t = 0, T = value.length; t < T; ++t) {
       valid = spec(value[t], errors, addKey(p, t)) && valid;
+
+      if (!valid && errors == null) {
+        break;
+      }
+    }
 
     return valid;
   },
@@ -139,6 +145,10 @@ export const isObject = <T extends {[P in keyof T]: AnyStrictValidator}, Unknown
           valid = spec(sub, errors, addKey(p, key)) && valid;
         } else if (allowUnknownKeys === null || !allowUnknownKeys(sub)) {
           valid = pushError(errors, addKey(p, key), `Extraneous property (got ${getPrintable(sub)})`);
+        }
+
+        if (!valid && errors == null) {
+          break;
         }
       }
 
