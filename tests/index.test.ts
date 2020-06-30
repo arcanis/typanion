@@ -64,14 +64,16 @@ const VALIDATION_TESTS: {
     [[42], false],
   ],
 }, {
-  validator: () => t.isObject({}, {allowUnknownKeys: t.isString()}),
+  validator: () => t.isObject({}, {extra: t.isUnknown()}),
   tests: [
     [{}, true],
-    [{foo: `foo`}, true],
-    [{foo: 42}, false],
+    [{foo: 42}, true],
+    [42, false],
+    [undefined, false],
+    [null, false],
   ],
 }, {
-  validator: () => t.isOneOf([t.isObject({foo: t.isString()}, {allowUnknownKeys: t.isUnknown()}), t.isObject({bar: t.isString()}, {allowUnknownKeys: t.isUnknown()})]),
+  validator: () => t.isOneOf([t.isObject({foo: t.isString()}, {extra: t.isUnknown()}), t.isObject({bar: t.isString()}, {extra: t.isUnknown()})]),
   tests: [
     [{foo: `foo`}, true],
     [{bar: `bar`}, true],
@@ -79,12 +81,37 @@ const VALIDATION_TESTS: {
     [{foo: `foo`, bar: `bar`}, true],
   ],
 }, {
-  validator: () => t.isOneOf([t.isObject({foo: t.isString()}, {allowUnknownKeys: t.isUnknown()}), t.isObject({bar: t.isString()}, {allowUnknownKeys: t.isUnknown()})], {exclusive: true}),
+  validator: () => t.isOneOf([t.isObject({foo: t.isString()}, {extra: t.isUnknown()}), t.isObject({bar: t.isString()}, {extra: t.isUnknown()})], {exclusive: true}),
   tests: [
     [{foo: `foo`}, true],
     [{bar: `bar`}, true],
     [{baz: `baz`}, false],
     [{foo: `foo`, bar: `bar`}, false],
+  ],
+}, {
+  validator: () => t.isDict(t.isUnknown()),
+  tests: [
+    [{}, true],
+    [{foo: 42}, true],
+    [42, false],
+    [undefined, false],
+    [null, false],
+  ],
+}, {
+  validator: () => t.isDict(t.isNumber()),
+  tests: [
+    [{}, true],
+    [{foo: 42}, true],
+    [{foo: `foo`}, false],
+    [42, false],
+  ],
+}, {
+  validator: () => t.isDict(t.isNumber(), {keys: t.applyCascade(t.isString(), [t.isUUID4()])}),
+  tests: [
+    [{}, true],
+    [{[`806af6da-bd31-4a8a-b3dc-a0fafdc3757a`]: 42}, true],
+    [{[`806af6da-bd31-4a8a-b3dc-a0fafdc3757a`]: `foo`}, false],
+    [{foo: 42}, false],
   ],
 }, {
   validator: () => t.isOptional(t.isString()),

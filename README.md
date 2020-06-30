@@ -91,15 +91,17 @@ const isMovie = t.isObject({
 
 ### Type predicates
 
-- `isArray(spec)` will ensure that the values are arrays whose values all match the specified schema.
+- `isArray(values)` will ensure that the values are arrays whose values all match the specified schema.
 
 - `isBoolean()` will ensure that the values are all booleans. Note that to specifically check for either `true` or `false`, you can look for `isLiteral`.
+
+- `isDict(values, {keys?})` will ensure that the values are all a standard JavaScript objects containing an arbitrary number of fields whose values all match the given schema. The `keys` option can be used to apply a schema on the keys as well (this will always have to be strings, so you'll likely want to use `applyCascade(isString(), [...])` to define the pattern).
 
 - `isLiteral(value)` will ensure that the values are strictly equal to the specified expected value. It's an handy tool that you can combine with `oneOf` and `object` to parse structures similar to Redux actions, etc. Note that you'll need to annotate your value with `as const` in order to let TypeScript know that the exact value matters (otherwise it'll cast it to `string` instead).
 
 - `isNumber()` will ensure that the values are all numbers.
 
-- `isObject(props)` will ensure that the values are plain old objects whose properties match the given shape. It accepts an option, `allowUnknownKeys`, which can be set to either `false` (the default) or another schema which will then be used to validate unknown keys (use `isUnknown` to accept any value without validating them first).
+- `isObject(props, {extra?})` will ensure that the values are plain old objects whose properties match the given shape. Extraneous properties will be aggregated and validated against the optional `extra` schema.
 
 - `isString()` will ensure that the values are all regular strings.
 
@@ -117,21 +119,31 @@ const isMovie = t.isObject({
 
 ### Cascading predicates
 
+Cascading predicate don't contribute to refining the value type, but are handful to assert that the value itself follows a particular pattern. You would compose them using `applyCascade` (cf the [Examples](#Examples) section).
+
 - `hasExactLength` will ensure that the values all have a `length` property exactly equal to the specified value.
 
 - `hasMaxLength` will ensure that the values all have a `length` property at most equal to the specified value.
 
 - `hasMinLength` will ensure that the values all have a `length` property at least equal to the specified value.
 
+- `hasUniqueItems` will ensure that the values only have unique items (`map` will transform before comparing).
+
 - `isAtLeast` will ensure that the values compare positively with the specified value.
 
 - `isAtMost` will ensure that the values compare positively with the specified value.
+
+- `isBase64` will ensure that the values are valid base 64 data.
+
+- `isHexColor` will ensure that the values are hexadecimal colors (`alpha` will allow an additional channel).
 
 - `isInExclusiveRange` will ensure that the values compare positively with the specified value.
 
 - `isInInclusiveRange` will ensure that the values compare positively with the specified value.
 
-- `isInteger` will ensure that the values are round integers.
+- `isInteger` will ensure that the values are round safe integers (`unsafe` will allow [unsafe ones](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isSafeInteger)).
+
+- `isJSON` will ensure that the values are valid JSON, and optionally match them against a nested schema.
 
 - `isLowerCase` will ensure that the values only contain lowercase characters.
 
@@ -139,11 +151,50 @@ const isMovie = t.isObject({
 
 - `isPositive` will ensure that the values are at least 0.
 
+- `isISO8601` will ensure that the values are dates following the ISO 8601 standard.
+
 - `isUpperCase` will ensure that the values only contain uppercase characters.
 
 - `isUUID4` will ensure that the values are valid UUID 4 strings.
 
 - `matchesRegExp` will ensure that the values all match the given regular expression.
+
+## Examples
+
+Validate that an unknown value is a port protocol:
+
+```ts
+const isPort = t.applyCascade(t.isNumber(), [
+    t.isInteger(),
+    t.isInInclusiveRange(1, 65535),
+]);
+
+isPort(42000);
+```
+
+Validate that a value contains a specific few fields, regardless of the others:
+
+```ts
+const isDiv = t.isObject({
+    tagName: t.literal(`DIV` as const),
+}, {
+    extra: t.isUnknown(),
+});
+
+isDiv({tagName: `div`, appendChild: () => {}});
+```
+
+Validate that a specific field is a specific value, and that others are all numbers:
+
+```ts
+const isModel = t.isObject({
+    uid: t.String(),
+}, {
+    extra: t.isDict(t.isNumber()),
+});
+
+isModel({uid: `foo`, valA: 12, valB: 24});
+```
 
 ## License (MIT)
 

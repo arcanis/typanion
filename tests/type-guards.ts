@@ -46,16 +46,31 @@ import * as t from '../sources';
 (foo: unknown) => {
     if (true) {
         // @ts-expect-error
+        const bar: number = foo.bar;
+    }
+    
+    if (t.isObject({bar: t.isString()})(foo)) {
+        // @ts-expect-error
+        const bar: number = foo.bar;
+    }
+    
+    if (t.isObject({bar: t.isString()})(foo)) {
+        const bar: string = foo.bar;
+    }
+};
+
+(foo: unknown) => {
+    if (true) {
+        // @ts-expect-error
         const bar: number = foo;
     }
     
-    if (t.isObject({}, {allowUnknownKeys: t.isString()})(foo)) {
+    if (t.isObject({}, {extra: t.isDict(t.isString())})(foo)) {
         // @ts-expect-error
         const bar: number = foo['bar'];
     }
     
-    if (t.isObject({}, {allowUnknownKeys: t.isString()})(foo)) {
-        // @ts-expect-error
+    if (t.isObject({}, {extra: t.isDict(t.isString())})(foo)) {
         const bar: string = foo['bar'];
     }
 };
