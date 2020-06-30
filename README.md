@@ -107,6 +107,8 @@ const isMovie = t.isObject({
 
 - `isUnknown()` will accept whatever is the input without validating it, but without refining the type inference either. Note that by default `isUnknown` will forbid `undefined` and `null`, but this can be switched off by explicitly allowing them via `isOptional` and `isNullable`.
 
+- `isInstanceOf(constructor)` will ensure that the values are instances of a given constructor.
+
 ### Helper predicates
 
 - `applyCascade(spec, [specA, specB, ...])` will ensure that the values all match `spec` and, if they do, run the followup validations as well. Since those followups will not contribute to the inference (only the lead schema will), you'll typically want to put here anything that's a logical validation, rather than a typed one (cf the [Cascading Predicates](#Cascading-predicate) section).

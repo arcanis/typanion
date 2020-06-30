@@ -5,7 +5,7 @@ import * as t from '../sources';
         // @ts-expect-error
         const bar: unknown[] = foo;
     }
-    
+
     if (t.isArray(t.isUnknown())(foo)) {
         const bar: unknown[] = foo;
     }
@@ -26,7 +26,7 @@ import * as t from '../sources';
         // @ts-expect-error
         const bar: number = foo;
     }
-    
+
     if (t.isNumber()(foo)) {
         const bar: number = foo;
     }
@@ -37,7 +37,7 @@ import * as t from '../sources';
         // @ts-expect-error
         const bar: boolean = foo;
     }
-    
+
     if (t.isBoolean()(foo)) {
         const bar: boolean = foo;
     }
@@ -48,12 +48,12 @@ import * as t from '../sources';
         // @ts-expect-error
         const bar: number = foo.bar;
     }
-    
+
     if (t.isObject({bar: t.isString()})(foo)) {
         // @ts-expect-error
         const bar: number = foo.bar;
     }
-    
+
     if (t.isObject({bar: t.isString()})(foo)) {
         const bar: string = foo.bar;
     }
@@ -64,13 +64,24 @@ import * as t from '../sources';
         // @ts-expect-error
         const bar: number = foo;
     }
-    
+
     if (t.isObject({}, {extra: t.isDict(t.isString())})(foo)) {
         // @ts-expect-error
         const bar: number = foo['bar'];
     }
-    
+
     if (t.isObject({}, {extra: t.isDict(t.isString())})(foo)) {
         const bar: string = foo['bar'];
+    }
+};
+
+(foo: unknown) => {
+    if (true) {
+        // @ts-expect-error
+        const bar: Error = foo;
+    }
+
+    if (t.isInstanceOf(Error)(foo)) {
+        const bar: Error = foo;
     }
 };

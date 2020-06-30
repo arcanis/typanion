@@ -137,6 +137,14 @@ const VALIDATION_TESTS: {
     [42, false],
     [null, true],
   ],
+}, {
+  validator: () => t.isInstanceOf(Error),
+  tests: [
+    [new Error(), true],
+    [Error, false],
+    [`foo`, false],
+    [new (class CustomError extends Error {})(), true],
+  ],
 }];
 
 for (const {validator, tests} of VALIDATION_TESTS) {
