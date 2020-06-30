@@ -199,6 +199,15 @@ export const isObject = <T extends {[P in keyof T]: AnyStrictValidator}, Unknown
   });
 };
 
+export const isInstanceOf = <T extends new (...args: any) => InstanceType<T>>(constructor: T) => makeValidator<unknown, InstanceType<T>>({
+  test: (value, errors, p): value is InstanceType<T> => {
+    if (!(value instanceof constructor))
+      return pushError(errors, p, `Expected an instance of ${constructor.name} (got ${getPrintable(value)})`);
+
+    return true;
+  },
+});
+
 export const isOneOf = <T extends AnyStrictValidator>(specs: Array<T>, {
   exclusive = false,
 }: {
