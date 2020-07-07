@@ -153,6 +153,10 @@ export const isDict = <T extends AnyStrictValidator>(spec: T, {
   },
 });
 
+// https://stackoverflow.com/a/56146934/880703
+type UndefinedProperties<T> = {[P in keyof T]-?: undefined extends T[P] ? P : never}[keyof T]
+type ToOptional<T> = Partial<Pick<T, UndefinedProperties<T>>> & Pick<T, Exclude<keyof T, UndefinedProperties<T>>>
+
 export const isObject = <T extends {[P in keyof T]: AnyStrictValidator}, UnknownValidator extends AnyStrictValidator | null = null>(props: T, {
   extra: extraSpec = null,
 }: {
@@ -160,8 +164,11 @@ export const isObject = <T extends {[P in keyof T]: AnyStrictValidator}, Unknown
 } = {}) => {
   const specKeys = Object.keys(props);
 
-  return makeValidator<unknown, {[P in keyof T]: InferType<(typeof props)[P]>} & DeriveIndexUnlessNull<UnknownValidator>>({
-    test: (value, errors, p): value is {[P in keyof T]: InferType<(typeof props)[P]>} & DeriveIndexUnlessNull<UnknownValidator> => {
+  // We need to store this type inside an alias, otherwise TS seems to miss the "value is ..." guard
+  type RequestedShape = ToOptional<{[P in keyof T]: InferType<(typeof props)[P]>} & DeriveIndexUnlessNull<UnknownValidator>>;
+
+  return makeValidator<unknown, RequestedShape>({
+    test: (value, errors, p): value is RequestedShape => {
       if (typeof value !== `object` || value === null)
         return pushError(errors, p, `Expected an object (got ${getPrintable(value)})`);
 
