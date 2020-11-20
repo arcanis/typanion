@@ -80,12 +80,12 @@ export const isUnknown = () => makeValidator<unknown, unknown>({
   },
 });
 
-export function isLiteral(expected: null): StrictTest<unknown, null>;
-export function isLiteral(expected: true): StrictTest<unknown, true>;
-export function isLiteral(expected: false): StrictTest<unknown, false>;
-export function isLiteral<T extends number>(expected: T): StrictTest<unknown, T>;
-export function isLiteral<T extends string>(expected: T): StrictTest<unknown, T>;
-export function isLiteral<T>(expected: T): StrictTest<unknown, T>;
+export function isLiteral(expected: null): StrictValidator<unknown, null>;
+export function isLiteral(expected: true): StrictValidator<unknown, true>;
+export function isLiteral(expected: false): StrictValidator<unknown, false>;
+export function isLiteral<T extends number>(expected: T): StrictValidator<unknown, T>;
+export function isLiteral<T extends string>(expected: T): StrictValidator<unknown, T>;
+export function isLiteral<T>(expected: T): StrictValidator<unknown, T>;
 export function isLiteral<T>(expected: T) {
   return makeValidator<unknown, T>({
     test: (value, state): value is T => {
