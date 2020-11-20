@@ -48,8 +48,23 @@ Passing a second parameter allows you to retrieve detailed errors:
 const userData = JSON.parse(input);
 const errors: string[] = [];
 
-if (!isMovie(userData, errors)) {
+if (!isMovie(userData, {errors})) {
     console.log(errors);
+}
+```
+
+You can also apply coercion over the user input:
+
+```ts
+const userData = JSON.parse(input);
+const coercions: Coercion[] = [];
+
+if (isMovie(userData, {coercions})) {
+    // Coercions aren't flushed by default
+    for (const [p, op] of coercions) op();
+
+    // All relevant fields have now been coerced
+    // ...
 }
 ```
 
@@ -93,13 +108,15 @@ const isMovie = t.isObject({
 
 - `isArray(values)` will ensure that the values are arrays whose values all match the specified schema.
 
-- `isBoolean()` will ensure that the values are all booleans. Note that to specifically check for either `true` or `false`, you can look for `isLiteral`.
+- `isBoolean()` will ensure that the values are all booleans. Prefer `isLiteral` if you wish to specifically check for one of `true` or `false`. This predicate supports coercion.
+
+- `isDate()` will ensure that the values are proper `Date` instances. This predicate supports coercion via either ISO8601, or raw numbers (in which case they're interpreted as the number of *seconds* since epoch, not milliseconds).
 
 - `isDict(values, {keys?})` will ensure that the values are all a standard JavaScript objects containing an arbitrary number of fields whose values all match the given schema. The `keys` option can be used to apply a schema on the keys as well (this will always have to be strings, so you'll likely want to use `applyCascade(isString(), [...])` to define the pattern).
 
-- `isLiteral(value)` will ensure that the values are strictly equal to the specified expected value. It's an handy tool that you can combine with `oneOf` and `object` to parse structures similar to Redux actions, etc. Note that you'll need to annotate your value with `as const` in order to let TypeScript know that the exact value matters (otherwise it'll cast it to `string` instead).
+- `isLiteral(value)` will ensure that the values are strictly equal to the specified expected value. It's an handy tool that you can combine with `oneOf` and `object` to parse structures similar to Redux actions, etc.
 
-- `isNumber()` will ensure that the values are all numbers.
+- `isNumber()` will ensure that the values are all numbers. This predicate supports coercion.
 
 - `isObject(props, {extra?})` will ensure that the values are plain old objects whose properties match the given shape. Extraneous properties will be aggregated and validated against the optional `extra` schema.
 
@@ -178,7 +195,7 @@ Validate that a value contains a specific few fields, regardless of the others:
 
 ```ts
 const isDiv = t.isObject({
-    tagName: t.literal(`DIV` as const),
+    tagName: t.literal(`DIV`),
 }, {
     extra: t.isUnknown(),
 });

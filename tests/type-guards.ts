@@ -6,6 +6,33 @@ import * as t from '../sources';
         const bar: unknown[] = foo;
     }
 
+    if (t.isLiteral(null)(foo)) {
+        const bar: null = foo;
+    }
+
+    if (t.isLiteral(`foo`)(foo)) {
+        const bar: `foo` = foo;
+    }
+
+    if (t.isLiteral(true)(foo)) {
+        const bar: true = foo;
+    }
+
+    if (t.isLiteral(false)(foo)) {
+        const bar: false = foo;
+    }
+
+    if (t.isLiteral(42)(foo)) {
+        const bar: 42 = foo;
+    }
+}
+
+(foo: unknown) => {
+    if (true) {
+        // @ts-expect-error
+        const bar: unknown[] = foo;
+    }
+
     if (t.isArray(t.isUnknown())(foo)) {
         const bar: unknown[] = foo;
     }

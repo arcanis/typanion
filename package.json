@@ -1,6 +1,6 @@
 {
   "name": "typanion",
-  "version": "2.1.1",
+  "version": "3.0.0",
   "main": "sources/index",
   "license": "MIT",
   "sideEffects": false,
@@ -17,7 +17,7 @@
     "rollup": "^2.17.0",
     "ts-node": "^8.10.2",
     "tslib": "^2.0.0",
-    "typescript": "^3.9.5"
+    "typescript": "^4.1.2"
   },
   "scripts": {
     "prepack": "rm -rf lib && rollup -c",

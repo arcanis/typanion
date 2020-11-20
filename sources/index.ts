@@ -1,8 +1,17 @@
+export type Coercion = [string, () => void];
+
+export type ValidationState = {
+  p?: string,
+  errors?: string[],
+  coercions?: Coercion[],
+  coercion?: (val: any) => void,
+};
+
 export type Trait<Type> = {__trait: Type};
 export type InferType<U> = U extends Trait<infer V> ? V : never;
 
-export type LooseTest<U> = (value: U, errors?: string[] | null, p?: string) => boolean;
-export type StrictTest<U, V extends U> = (value: U, errors?: string[] | null, p?: string) => value is V;
+export type LooseTest<U> = (value: U, test?: ValidationState) => boolean;
+export type StrictTest<U, V extends U> = (value: U, test?: ValidationState) => value is V;
 
 export type LooseValidator<U, V> = LooseTest<U> & Trait<V>;
 export type StrictValidator<U, V extends U> = StrictTest<U, V> & Trait<V>;
@@ -44,74 +53,188 @@ export function getPrintable(value: unknown) {
   return JSON.stringify(value);
 }
 
-export function addKey(p: string | undefined, key: string | number) {
+export function computeKey(state: ValidationState | undefined, key: string | number) {
   if (typeof key === `number`) {
-    return `${p ?? `.`}[${key}]`
+    return `${state?.p ?? `.`}[${key}]`;
   } else if (simpleKeyRegExp.test(key)) {
-    return `${p ?? ``}.${key}`;
+    return `${state?.p ?? ``}.${key}`;
   } else {
-    return `${p ?? `.`}[${JSON.stringify(key)}]`;
+    return `${state?.p ?? `.`}[${JSON.stringify(key)}]`;
   }
 }
 
-export function pushError(errors: string[] | null | undefined, p: string | undefined, message: string) {
+export function makeSetter(target: any, key: any) {
+  return (v: any) => {
+    target[key] = v;
+  };
+}
+
+export function pushError({errors, p}: ValidationState = {}, message: string) {
   errors?.push(`${p ?? `.`}: ${message}`);
   return false;
 }
 
 export const isUnknown = () => makeValidator<unknown, unknown>({
-  test: (value, errors, p): value is unknown => {
+  test: (value, state): value is unknown => {
     return true;
   },
 });
 
-export const isLiteral = <T>(expected: T) => makeValidator<unknown, T>({
-  test: (value, errors, p): value is T => {
-    if (value !== expected)
-      return pushError(errors, p, `Expected a literal (got ${getPrintable(expected)})`);
+export function isLiteral(expected: null): StrictTest<unknown, null>;
+export function isLiteral(expected: true): StrictTest<unknown, true>;
+export function isLiteral(expected: false): StrictTest<unknown, false>;
+export function isLiteral<T extends number>(expected: T): StrictTest<unknown, T>;
+export function isLiteral<T extends string>(expected: T): StrictTest<unknown, T>;
+export function isLiteral<T>(expected: T): StrictTest<unknown, T>;
+export function isLiteral<T>(expected: T) {
+  return makeValidator<unknown, T>({
+    test: (value, state): value is T => {
+      if (value !== expected)
+        return pushError(state, `Expected a literal (got ${getPrintable(expected)})`);
 
-    return true;
-  },
-});
+      return true;
+    },
+  });
+};
 
 export const isString = () => makeValidator<unknown, string>({
-  test: (value, errors, p): value is string => {
+  test: (value, state): value is string => {
     if (typeof value !== `string`)
-      return pushError(errors, p, `Expected a string (got ${getPrintable(value)})`);
+      return pushError(state, `Expected a string (got ${getPrintable(value)})`);
 
     return true;
   },
 });
 
+const BOOLEAN_COERCIONS = new Map<unknown, boolean>([
+  [`true`, true],
+  [`True`, true],
+  [`1`, true],
+  [1, true],
+
+  [`false`, false],
+  [`False`, false],
+  [`0`, false],
+  [0, false],
+]);
+
 export const isBoolean = () => makeValidator<unknown, boolean>({
-  test: (value, errors, p): value is boolean => {
-    if (typeof value !== `boolean`)
-      return pushError(errors, p, `Expected a boolean (got ${getPrintable(value)})`);
+  test: (value, state): value is boolean => {
+    if (typeof value !== `boolean`) {
+      if (typeof state?.coercions !== `undefined`) {
+        if (typeof state?.coercion === `undefined`)
+          return pushError(state, `Unbound coercion result`);
+
+        const coercion = BOOLEAN_COERCIONS.get(value);
+        if (typeof coercion !== `undefined`) {
+          state.coercions.push([state.p ?? `.`, state.coercion.bind(null, coercion)]);
+          return true;
+        }
+      }
+
+      return pushError(state, `Expected a boolean (got ${getPrintable(value)})`);
+    }
 
     return true;
   },
 });
 
 export const isNumber = () => makeValidator<unknown, number>({
-  test: (value, errors, p): value is number => {
-    if (typeof value !== `number`)
-      return pushError(errors, p, `Expected a number (got ${getPrintable(value)})`);
+  test: (value, state): value is number => {
+    if (typeof value !== `number`) {
+      if (typeof state?.coercions !== `undefined`) {
+        if (typeof state?.coercion === `undefined`)
+          return pushError(state, `Unbound coercion result`);
+
+        let coercion: number | undefined;
+        if (typeof value === `string`) {
+          let val;
+          try {
+            val = JSON.parse(value);
+          } catch {}
+
+          // We check against JSON.stringify that the output is the same to ensure that the number can be safely represented in JS
+          if (typeof val === `number`) {
+            if (JSON.stringify(val) === value) {
+              coercion = val;
+            } else {
+              return pushError(state, `Received a number that can't be safely represented by the runtime (${value})`);
+            }
+          }
+        }
+
+        if (typeof coercion !== `undefined`) {
+          state.coercions.push([state.p ?? `.`, state.coercion.bind(null, coercion)]);
+          return true;
+        }
+      }
+
+      return pushError(state, `Expected a number (got ${getPrintable(value)})`);
+    }
+
+    return true;
+  },
+});
+
+export const isDate = () => makeValidator<unknown, Date>({
+  test: (value, state): value is Date => {
+    if (!(value instanceof Date)) {
+      if (typeof state?.coercions !== `undefined`) {
+        if (typeof state?.coercion === `undefined`)
+          return pushError(state, `Unbound coercion result`);
+
+        let coercion: Date | undefined;
+
+        if (typeof value === `string` && iso8601RegExp.test(value)) {
+          coercion = new Date(value);
+        } else {
+          let timestamp: number | undefined;
+          if (typeof value === `string`) {
+            let val;
+            try {
+              val = JSON.parse(value);
+            } catch {}
+
+            if (typeof val === `number`) {
+              timestamp = val;
+            }
+          } else if (typeof value === `number`) {
+            timestamp = value;
+          }
+
+          if (typeof timestamp !== `undefined`) {
+            if (Number.isSafeInteger(timestamp) || !Number.isSafeInteger(timestamp * 1000)) {
+              coercion = new Date(timestamp * 1000);
+            } else {
+              return pushError(state, `Received a timestamp that can't be safely represented by the runtime (${value})`);
+            }
+          }
+        }
+
+        if (typeof coercion !== `undefined`) {
+          state.coercions.push([state.p ?? `.`, state.coercion.bind(null, coercion)]);
+          return true;
+        }
+      }
+
+      return pushError(state, `Expected a date (got ${getPrintable(value)})`);
+    }
 
     return true;
   },
 });
 
 export const isArray = <T extends AnyStrictValidator>(spec: T) => makeValidator<unknown, Array<InferType<T>>>({
-  test: (value, errors, p): value is Array<InferType<T>> => {
+  test: (value, state): value is Array<InferType<T>> => {
     if (!Array.isArray(value))
-      return pushError(errors, p, `Expected an array (got ${getPrintable(value)})`);
+      return pushError(state, `Expected an array (got ${getPrintable(value)})`);
 
     let valid = true;
 
     for (let t = 0, T = value.length; t < T; ++t) {
-      valid = spec(value[t], errors, addKey(p, t)) && valid;
+      valid = spec(value[t], {...state, p: computeKey(state, t), coercion: makeSetter(value, t)}) && valid;
 
-      if (!valid && errors == null) {
+      if (!valid && state?.errors == null) {
         break;
       }
     }
@@ -127,23 +250,28 @@ export const isDict = <T extends AnyStrictValidator>(spec: T, {
 }: {
   keys?: StrictValidator<unknown, string> | null,
 } = {}) => makeValidator<unknown, {[k: string]: InferType<T>}>({
-  test: (value, errors, p): value is {[k: string]: InferType<T>} => {
+  test: (value, state): value is {[k: string]: InferType<T>} => {
     if (typeof value !== `object` || value === null)
-      return pushError(errors, p, `Expected an object (got ${getPrintable(value)})`);
+      return pushError(state, `Expected an object (got ${getPrintable(value)})`);
 
     const keys = Object.keys(value);
 
     let valid = true;
-    for (let t = 0, T = keys.length && (valid || errors != null); t < T; ++t) {
+    for (let t = 0, T = keys.length && (valid || state?.errors != null); t < T; ++t) {
       const key = keys[t];
       const sub = (value as {[key: string]: unknown})[key];
 
-      if (keySpec !== null && !keySpec(key, errors, p)) {
+      if (key === `__proto__` || key === `constructor`) {
+        valid = pushError({...state, p: computeKey(state, key)}, `Unsafe property name`);
+        continue;
+      }
+
+      if (keySpec !== null && !keySpec(key, state)) {
         valid = false;
         continue;
       }
 
-      if (!spec(sub, errors, addKey(p, key))) {
+      if (!spec(sub, {...state, p: computeKey(state, key), coercion: makeSetter(value, key)})) {
         valid = false;
         continue;
       }
@@ -168,38 +296,46 @@ export const isObject = <T extends {[P in keyof T]: AnyStrictValidator}, Unknown
   type RequestedShape = ToOptional<{[P in keyof T]: InferType<(typeof props)[P]>} & DeriveIndexUnlessNull<UnknownValidator>>;
 
   return makeValidator<unknown, RequestedShape>({
-    test: (value, errors, p): value is RequestedShape => {
+    test: (value, state): value is RequestedShape => {
       if (typeof value !== `object` || value === null)
-        return pushError(errors, p, `Expected an object (got ${getPrintable(value)})`);
+        return pushError(state, `Expected an object (got ${getPrintable(value)})`);
 
       const keys = new Set([...specKeys, ...Object.keys(value)]);
       const extra: {[key: string]: unknown} = {};
 
       let valid = true;
       for (const key of keys) {
-        const spec = Object.prototype.hasOwnProperty.call(props, key)
-          ? (props as any)[key] as AnyStrictValidator | undefined
-          : undefined;
-
-        const sub = Object.prototype.hasOwnProperty.call(value, key)
-          ? (value as any)[key] as unknown
-          : undefined;
-
-        if (typeof spec !== `undefined`) {
-          valid = spec(sub, errors, addKey(p, key)) && valid;
-        } else if (extraSpec === null) {
-          valid = pushError(errors, addKey(p, key), `Extraneous property (got ${getPrintable(sub)})`);
+        if (key === `constructor` || key === `__proto__`) {
+          valid = pushError({...state, p: computeKey(state, key)}, `Unsafe property name`);
         } else {
-          extra[key] = sub;
+          const spec = Object.prototype.hasOwnProperty.call(props, key)
+            ? (props as any)[key] as AnyStrictValidator | undefined
+            : undefined;
+
+          const sub = Object.prototype.hasOwnProperty.call(value, key)
+            ? (value as any)[key] as unknown
+            : undefined;
+
+          if (typeof spec !== `undefined`) {
+            valid = spec(sub, {...state, p: computeKey(state, key), coercion: makeSetter(value, key)}) && valid;
+          } else if (extraSpec === null) {
+            valid = pushError({...state, p: computeKey(state, key)}, `Extraneous property (got ${getPrintable(sub)})`);
+          } else {
+            Object.defineProperty(extra, key, {
+              enumerable: true,
+              get: () => sub,
+              set: makeSetter(value, key)
+            });
+          }
         }
 
-        if (!valid && errors == null) {
+        if (!valid && state?.errors == null) {
           break;
         }
       }
 
-      if (extraSpec !== null && (valid || errors != null))
-        valid = extraSpec(extra, errors, p) && valid;
+      if (extraSpec !== null && (valid || state?.errors != null))
+        valid = extraSpec(extra, state) && valid;
 
       return valid;
     },
@@ -207,9 +343,9 @@ export const isObject = <T extends {[P in keyof T]: AnyStrictValidator}, Unknown
 };
 
 export const isInstanceOf = <T extends new (...args: any) => InstanceType<T>>(constructor: T) => makeValidator<unknown, InstanceType<T>>({
-  test: (value, errors, p): value is InstanceType<T> => {
+  test: (value, state): value is InstanceType<T> => {
     if (!(value instanceof constructor))
-      return pushError(errors, p, `Expected an instance of ${constructor.name} (got ${getPrintable(value)})`);
+      return pushError(state, `Expected an instance of ${constructor.name} (got ${getPrintable(value)})`);
 
     return true;
   },
@@ -220,17 +356,20 @@ export const isOneOf = <T extends AnyStrictValidator>(specs: Array<T>, {
 }: {
   exclusive?: boolean,
 } = {}) => makeValidator<unknown, InferType<T>>({
-  test: (value, errors, p): value is InferType<T> => {
-    const matches: string[] = [];
-    const errorBuffer = typeof errors !== `undefined`
+  test: (value, state): value is InferType<T> => {
+    const matches: [string, (Coercion[] | undefined)][] = [];
+    const errorBuffer = typeof state?.errors !== `undefined`
       ? [] : undefined;
 
     for (let t = 0, T = specs.length; t < T; ++t) {
-      const subErrors = typeof errors !== `undefined`
+      const subErrors = typeof state?.errors !== `undefined`
         ? [] : undefined;
 
-      if (specs[t](value, subErrors, `${p ?? `.`}#${t + 1}`)) {
-        matches.push(`#${t + 1}`);
+      const subCoercions = typeof state?.coercions !== `undefined`
+        ? [] : undefined;
+
+      if (specs[t](value, {...state, errors: subErrors, coercions: subCoercions, p: `${state?.p ?? `.`}#${t + 1}`})) {
+        matches.push([`#${t + 1}`, subCoercions]);
         if (!exclusive) {
           break;
         }
@@ -239,69 +378,73 @@ export const isOneOf = <T extends AnyStrictValidator>(specs: Array<T>, {
       }
     }
 
-    if (matches.length === 1)
+    if (matches.length === 1) {
+      const [, subCoercions] = matches[0];
+      if (typeof subCoercions !== `undefined`)
+        state?.coercions?.push(...subCoercions);
       return true;
+    }
 
     if (matches.length > 1)
-      pushError(errors, p, `Expected to match exactly a single predicate (matched ${matches.join(`, `)})`);
+      pushError(state, `Expected to match exactly a single predicate (matched ${matches.join(`, `)})`);
     else
-      errors?.push(...errorBuffer!);
+      state?.errors?.push(...errorBuffer!);
 
     return false;
   },
 });
 
 export const applyCascade = <T extends AnyStrictValidator>(spec: T, followups: Array<StrictTest<InferType<T>, InferType<T>> | LooseTest<InferType<T>>>) => makeValidator<unknown, InferType<T>>({
-  test: (value, errors, p): value is InferType<T> => {
-    if (!spec(value, errors, p))
+  test: (value, state): value is InferType<T> => {
+    if (!spec(value, state))
       return false;
 
     return followups.every(spec => {
-      return spec(value as InferType<T>, errors, p);
+      return spec(value as InferType<T>, state);
     });
   },
 });
 
 export const isOptional = <T extends AnyStrictValidator>(spec: T) => makeValidator<unknown, InferType<T> | undefined>({
-  test: (value, errors, p): value is InferType<T> | undefined => {
+  test: (value, state): value is InferType<T> | undefined => {
     if (typeof value === `undefined`)
       return true;
 
-    return spec(value, errors, p);
+    return spec(value, state);
   },
 });
 
 export const isNullable = <T extends AnyStrictValidator>(spec: T) => makeValidator<unknown, InferType<T> | null>({
-  test: (value, errors, p): value is InferType<T> | null => {
+  test: (value, state): value is InferType<T> | null => {
     if (value === null)
       return true;
 
-    return spec(value, errors, p);
+    return spec(value, state);
   },
 });
 
 export const hasMinLength = <T extends {length: number}>(length: number) => makeValidator<T>({
-  test: (value, errors, p) => {
+  test: (value, state) => {
     if (!(value.length >= length))
-      return pushError(errors, p, `Expected to have a length of at least ${length} elements (got ${value.length})`);
+      return pushError(state, `Expected to have a length of at least ${length} elements (got ${value.length})`);
 
     return true;
   },
 });
 
 export const hasMaxLength = <T extends {length: number}>(length: number) => makeValidator<T>({
-  test: (value, errors, p) => {
+  test: (value, state) => {
     if (!(value.length <= length))
-      return pushError(errors, p, `Expected to have a length of at most ${length} elements (got ${value.length})`);
+      return pushError(state, `Expected to have a length of at most ${length} elements (got ${value.length})`);
 
     return true;
   },
 });
 
 export const hasExactLength = <T extends {length: number}>(length: number) => makeValidator<T>({
-  test: (value, errors, p) => {
+  test: (value, state) => {
     if (!(value.length <= length))
-      return pushError(errors, p, `Expected to have a length of exactly ${length} elements (got ${value.length})`);
+      return pushError(state, `Expected to have a length of exactly ${length} elements (got ${value.length})`);
 
     return true;
   },
@@ -312,7 +455,7 @@ export const hasUniqueItems = <T>({
 }: {
   map?: (value: T) => unknown,
 } = {}) => makeValidator<T[]>({
-  test: (value, errors, p) => {
+  test: (value, state) => {
     const set = new Set<unknown>();
     const dup = new Set<unknown>();
 
@@ -327,7 +470,7 @@ export const hasUniqueItems = <T>({
         if (dup.has(key))
           continue;
 
-        pushError(errors, p, `Expected to contain unique elements; got a duplicate with ${getPrintable(value)}`);
+        pushError(state, `Expected to contain unique elements; got a duplicate with ${getPrintable(value)}`);
         dup.add(key);
       } else {
         set.add(key);
@@ -339,54 +482,54 @@ export const hasUniqueItems = <T>({
 });
 
 export const isNegative = () => makeValidator<number>({
-  test: (value, errors, p) => {
+  test: (value, state) => {
     if (!(value <= 0))
-      return pushError(errors, p, `Expected to be negative (got ${value})`);
+      return pushError(state, `Expected to be negative (got ${value})`);
 
     return true;
   },
 });
 
 export const isPositive = () => makeValidator<number>({
-  test: (value, errors, p) => {
+  test: (value, state) => {
     if (!(value >= 0))
-      return pushError(errors, p, `Expected to be positive (got ${value})`);
+      return pushError(state, `Expected to be positive (got ${value})`);
 
     return true;
   },
 });
 
 export const isAtLeast = (n: number) => makeValidator<number>({
-  test: (value, errors, p) => {
+  test: (value, state) => {
     if (!(value >= n))
-      return pushError(errors, p, `Expected to be at least ${n} (got ${value})`);
+      return pushError(state, `Expected to be at least ${n} (got ${value})`);
 
     return true;
   },
 });
 
 export const isAtMost = (n: number) => makeValidator<number>({
-  test: (value, errors, p) => {
+  test: (value, state) => {
     if (!(value <= n))
-      return pushError(errors, p, `Expected to be at most ${n} (got ${value})`);
+      return pushError(state, `Expected to be at most ${n} (got ${value})`);
 
     return true;
   },
 });
 
 export const isInInclusiveRange = (a: number, b: number) => makeValidator<number>({
-  test: (value, errors, p) => {
+  test: (value, state) => {
     if (!(value >= a && value <= b))
-      return pushError(errors, p, `Expected to be in the [${a}; ${b}] range (got ${value})`);
+      return pushError(state, `Expected to be in the [${a}; ${b}] range (got ${value})`);
 
     return true;
   },
 });
 
 export const isInExclusiveRange = (a: number, b: number) => makeValidator<number>({
-  test: (value, errors, p) => {
+  test: (value, state) => {
     if (!(value >= a && value < b))
-      return pushError(errors, p, `Expected to be in the [${a}; ${b}[ range (got ${value})`);
+      return pushError(state, `Expected to be in the [${a}; ${b}[ range (got ${value})`);
 
     return true;
   },
@@ -397,57 +540,57 @@ export const isInteger = ({
 }: {
   unsafe?: boolean,
 } = {}) => makeValidator<number>({
-  test: (value, errors, p) => {
+  test: (value, state) => {
     if (value !== Math.round(value))
-      return pushError(errors, p, `Expected to be an integer (got ${value})`);
+      return pushError(state, `Expected to be an integer (got ${value})`);
 
     if (!Number.isSafeInteger(value))
-      return pushError(errors, p, `Expected to be a safe integer (got ${value})`);
+      return pushError(state, `Expected to be a safe integer (got ${value})`);
 
     return true;
   },
 });
 
 export const matchesRegExp = (regExp: RegExp) => makeValidator<string>({
-  test: (value, errors, p) => {
+  test: (value, state) => {
     if (!regExp.test(value))
-      return pushError(errors, p, `Expected to match the pattern ${regExp.toString()} (got ${getPrintable(value)})`);
+      return pushError(state, `Expected to match the pattern ${regExp.toString()} (got ${getPrintable(value)})`);
 
     return true;
   },
 });
 
 export const isLowerCase = () => makeValidator<string>({
-  test: (value, errors, p) => {
+  test: (value, state) => {
     if (value !== value.toLowerCase())
-      return pushError(errors, p, `Expected to be all-lowercase (got ${value})`);
+      return pushError(state, `Expected to be all-lowercase (got ${value})`);
 
     return true;
   },
 });
 
 export const isUpperCase = () => makeValidator<string>({
-  test: (value, errors, p) => {
+  test: (value, state) => {
     if (value !== value.toUpperCase())
-      return pushError(errors, p, `Expected to be all-uppercase (got ${value})`);
+      return pushError(state, `Expected to be all-uppercase (got ${value})`);
 
     return true;
   },
 });
 
 export const isUUID4 = () => makeValidator<string>({
-  test: (value, errors, p) => {
+  test: (value, state) => {
     if (!uuid4RegExp.test(value))
-      return pushError(errors, p, `Expected to be a valid UUID v4 (got ${getPrintable(value)})`);
+      return pushError(state, `Expected to be a valid UUID v4 (got ${getPrintable(value)})`);
 
     return true;
   },
 });
 
 export const isISO8601 = () => makeValidator<string>({
-  test: (value, errors, p) => {
+  test: (value, state) => {
     if (!iso8601RegExp.test(value))
-      return pushError(errors, p, `Expected to be a valid ISO 8601 date string (got ${getPrintable(value)})`);
+      return pushError(state, `Expected to be a valid ISO 8601 date string (got ${getPrintable(value)})`);
 
     return false;
   },
@@ -458,36 +601,36 @@ export const isHexColor = ({
 }: {
   alpha?: boolean,
 }) => makeValidator<string>({
-  test: (value, errors, p) => {
+  test: (value, state) => {
     const res = alpha
       ? colorStringRegExp.test(value)
       : colorStringAlphaRegExp.test(value);
 
     if (!res)
-      return pushError(errors, p, `Expected to be a valid hexadecimal color string (got ${getPrintable(value)})`);
+      return pushError(state, `Expected to be a valid hexadecimal color string (got ${getPrintable(value)})`);
 
     return true;
   },
 });
 
 export const isBase64 = () => makeValidator<string>({
-  test: (value, errors, p) => {
+  test: (value, state) => {
     if (!base64RegExp.test(value))
-      return pushError(errors, p, `Expected to be a valid base 64 string (got ${getPrintable(value)})`);
+      return pushError(state, `Expected to be a valid base 64 string (got ${getPrintable(value)})`);
 
     return true;
   },
 });
 
 export const isJSON = (spec: AnyStrictValidator = isUnknown()) => makeValidator<string>({
-  test: (value, errors, p) => {
+  test: (value, state) => {
     let data;
     try {
       data = JSON.parse(value);
     } catch {
-      return pushError(errors, p, `Expected to be a valid JSON string (got ${getPrintable(value)})`);
+      return pushError(state, `Expected to be a valid JSON string (got ${getPrintable(value)})`);
     }
 
-    return spec(data, errors, p);
+    return spec(data, state);
   },
 });
