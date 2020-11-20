@@ -196,6 +196,46 @@ const ERROR_TESTS: {
     [42, [`.#1: Expected a string (got 42)`, `.#2: Expected a boolean (got 42)`]],
     [true, []],
   ],
+}, {
+  validator: () => t.applyCascade(t.isDict(t.isUnknown()), [t.hasForbiddenKeys([`foo`, `bar`])]),
+  tests: [
+    [{foo: 42}, [`.: Forbidden property "foo"`]],
+    [{foo: 42, bar: 42}, [`.: Forbidden properties "foo", "bar"`]],
+    [{baz: 42}, []],
+  ],
+}, {
+  validator: () => t.applyCascade(t.isDict(t.isUnknown()), [t.hasRequiredKeys([`foo`, `bar`])]),
+  tests: [
+    [{foo: 42}, [`.: Missing required property "bar"`]],
+    [{foo: 42, bar: 42}, []],
+    [{baz: 42}, [`.: Missing required properties "foo", "bar"`]],
+  ],
+}, {
+  validator: () => t.applyCascade(t.isDict(t.isUnknown()), [t.hasMutuallyExclusiveKeys([`foo`, `bar`])]),
+  tests: [
+    [{foo: 42}, []],
+    [{bar: 42}, []],
+    [{foo: 42, bar: 42, baz: 42}, [`.: Mutually exclusive properties "foo", "bar"`]],
+    [{baz: 42}, []],
+  ],
+}, {
+  validator: () => t.applyCascade(t.isDict(t.isUnknown()), [t.hasKeyRelationship(`foo`, t.KeyRelationship.Forbids, [`bar`, `baz`])]),
+  tests: [
+    [{foo: 42}, []],
+    [{bar: 42}, []],
+    [{foo: 42, bar: 42}, [`.: Property "foo" forbids using property "bar"`]],
+    [{foo: 42, bar: 42, baz: 42}, [`.: Property "foo" forbids using properties "bar", "baz"`]],
+    [{foo: 42, qux: 42}, []],
+  ],
+}, {
+  validator: () => t.applyCascade(t.isDict(t.isUnknown()), [t.hasKeyRelationship(`foo`, t.KeyRelationship.Requires, [`bar`, `baz`])]),
+  tests: [
+    [{foo: 42}, [`.: Property "foo" requires using properties "bar", "baz"`]],
+    [{bar: 42}, []],
+    [{foo: 42, bar: 42}, [`.: Property "foo" requires using property "baz"`]],
+    [{foo: 42, bar: 42, baz: 42}, []],
+    [{foo: 42, qux: 42}, [`.: Property "foo" requires using properties "bar", "baz"`]],
+  ],
 }];
 
 for (const {validator, tests} of ERROR_TESTS) {
@@ -279,10 +319,7 @@ const COERCION_TESTS: {
     [{foo: `true`}, [], {foo: true}],
   ],
 }, {
-  validator: () => t.isDict(t.isOneOf([
-    t.isObject({foo: t.isBoolean(), bar: t.isLiteral(`hello`)}),
-    t.isObject({foo: t.isString(), bar: t.isLiteral(`world`)}),
-  ])),
+  validator: () => t.isDict(t.isOneOf([t.isObject({foo: t.isBoolean(), bar: t.isLiteral(`hello`)}), t.isObject({foo: t.isString(), bar: t.isLiteral(`world`)})])),
   tests: [
     [{val: {foo: `true`, bar: `hello`}}, [], {val: {foo: true, bar: `hello`}}],
     [{val: {foo: `true`, bar: `world`}}, [], {val: {foo: `true`, bar: `world`}}],

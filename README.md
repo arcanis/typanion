@@ -142,9 +142,17 @@ Cascading predicate don't contribute to refining the value type, but are handful
 
 - `hasExactLength` will ensure that the values all have a `length` property exactly equal to the specified value.
 
+- `hasForbiddenKeys` will ensure that the objects don't contain any of the specified keys.
+
+- `hasKeyRelationship` will ensure that when the specified key is found, the specified relationship is true.
+
 - `hasMaxLength` will ensure that the values all have a `length` property at most equal to the specified value.
 
 - `hasMinLength` will ensure that the values all have a `length` property at least equal to the specified value.
+
+- `hasMutuallyExclusiveKeys` will ensure that the objects don't contain more than one of the specified keys.
+
+- `hasRequiredKeys` will ensure that the objects contain all of the specified keys.
 
 - `hasUniqueItems` will ensure that the values only have unique items (`map` will transform before comparing).
 

@@ -69,6 +69,10 @@ export function makeSetter(target: any, key: any) {
   };
 }
 
+export function plural(n: number, singular: string, plural: string) {
+  return n === 1 ? singular : plural;
+}
+
 export function pushError({errors, p}: ValidationState = {}, message: string) {
   errors?.push(`${p ?? `.`}: ${message}`);
   return false;
@@ -634,3 +638,102 @@ export const isJSON = (spec: AnyStrictValidator = isUnknown()) => makeValidator<
     return spec(data, state);
   },
 });
+
+export const hasRequiredKeys = (requiredKeys: string[]) => {
+  const requiredSet = new Set(requiredKeys);
+
+  return makeValidator<{[key: string]: unknown}>({
+    test: (value, state) => {
+      const keys = new Set(Object.keys(value));
+
+      const problems: string[] = [];
+      for (const key of requiredSet)
+        if (!keys.has(key))
+          problems.push(key);
+
+      if (problems.length > 0)
+        return pushError(state, `Missing required ${plural(problems.length, `property`, `properties`)} ${problems.map(name => `"${name}"`).join(`, `)}`);
+
+      return true;
+    },
+  });
+};
+
+export const hasForbiddenKeys = (forbiddenKeys: string[]) => {
+  const forbiddenSet = new Set(forbiddenKeys);
+
+  return makeValidator<{[key: string]: unknown}>({
+    test: (value, state) => {
+      const keys = new Set(Object.keys(value));
+
+      const problems: string[] = [];
+      for (const key of forbiddenSet)
+        if (keys.has(key))
+          problems.push(key);
+
+      if (problems.length > 0)
+        return pushError(state, `Forbidden ${plural(problems.length, `property`, `properties`)} ${problems.map(name => `"${name}"`).join(`, `)}`);
+
+      return true;
+    },
+  });
+};
+
+export const hasMutuallyExclusiveKeys = (exclusiveKeys: string[]) => {
+  const exclusiveSet = new Set(exclusiveKeys);
+
+  return makeValidator<{[key: string]: unknown}>({
+    test: (value, state) => {
+      const keys = new Set(Object.keys(value));
+
+      const used: string[] = [];
+      for (const key of exclusiveSet)
+        if (keys.has(key))
+          used.push(key);
+
+      if (used.length > 1)
+        return pushError(state, `Mutually exclusive properties ${used.map(name => `"${name}"`).join(`, `)}`);
+
+      return true;
+    },
+  });
+};
+
+export enum KeyRelationship {
+  Forbids = `Forbids`,
+  Requires = `Requires`,
+};
+
+const keyRelationships = {
+  [KeyRelationship.Forbids]: {
+    expect: false,
+    message: `forbids using`,
+  },
+  [KeyRelationship.Requires]: {
+    expect: true,
+    message: `requires using`,
+  },
+};
+
+export const hasKeyRelationship = (subject: string, relationship: KeyRelationship, others: string[]) => {
+  const otherSet = new Set(others);
+  const spec = keyRelationships[relationship];
+
+  return makeValidator<{[key: string]: unknown}>({
+    test: (value, state) => {
+      const keys = new Set(Object.keys(value));
+      if (!keys.has(subject))
+        return true;
+
+      const problems: string[] = [];
+      for (const key of otherSet)
+        if (keys.has(key) !== spec.expect)
+          problems.push(key);
+
+      if (problems.length >= 1)
+        return pushError(state, `Property "${subject}" ${spec.message} ${plural(problems.length, `property`, `properties`)} ${problems.map(name => `"${name}"`).join(`, `)}`);
+      
+      return true;
+    },
+  })
+};
