@@ -9,7 +9,7 @@
     "noEmit": true,
     "outDir": "lib",
     "strict": true,
-    "target": "es2017"
+    "target": "es2020"
   },
   "include": [
     "sources/**/*",
