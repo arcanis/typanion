@@ -261,11 +261,21 @@ type AnyStrictValidatorTuple = AnyStrictValidator[] | [];
 
 type InferTypeFromTuple<T extends AnyStrictValidatorTuple> = {[K in keyof T]: InferType<T[K]>};
 
-export const isTuple = <T extends AnyStrictValidatorTuple>(spec: T) => {
+export const isTuple = <T extends AnyStrictValidatorTuple>(spec: T, {delimiter}: {delimiter?: string | RegExp} = {}) => {
   const lengthValidator = hasExactLength(spec.length);
 
   return makeValidator<unknown, InferTypeFromTuple<T>>({
     test: (value, state): value is InferTypeFromTuple<T> => {
+      if (typeof value === `string` && typeof delimiter !== `undefined`) {
+        if (typeof state?.coercions !== `undefined`) {
+          if (typeof state?.coercion === `undefined`)
+            return pushError(state, `Unbound coercion result`);
+
+          value = value.split(delimiter);
+          state.coercions.push([state.p ?? `.`, state.coercion.bind(null, value)]);
+        }
+      }
+
       if (!Array.isArray(value))
         return pushError(state, `Expected a tuple (got ${getPrintable(value)})`);
 
