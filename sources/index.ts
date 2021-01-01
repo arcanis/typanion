@@ -228,8 +228,18 @@ export const isDate = () => makeValidator<unknown, Date>({
   },
 });
 
-export const isArray = <T extends AnyStrictValidator>(spec: T) => makeValidator<unknown, Array<InferType<T>>>({
+export const isArray = <T extends AnyStrictValidator>(spec: T, {delimiter}: {delimiter?: string | RegExp} = {}) => makeValidator<unknown, Array<InferType<T>>>({
   test: (value, state): value is Array<InferType<T>> => {
+    if (typeof value === `string` && typeof delimiter !== `undefined`) {
+      if (typeof state?.coercions !== `undefined`) {
+        if (typeof state?.coercion === `undefined`)
+          return pushError(state, `Unbound coercion result`);
+
+        value = value.split(delimiter);
+        state.coercions.push([state.p ?? `.`, state.coercion.bind(null, value)]);
+      }
+    }
+
     if (!Array.isArray(value))
       return pushError(state, `Expected an array (got ${getPrintable(value)})`);
 
