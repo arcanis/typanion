@@ -108,6 +108,8 @@ const isMovie = t.isObject({
 
 - `isArray(values)` will ensure that the values are arrays whose values all match the specified schema.
 
+- `isTuple(values)` will ensure that the values are tuples whose items match the specified schemas.
+
 - `isBoolean()` will ensure that the values are all booleans. Prefer `isLiteral` if you wish to specifically check for one of `true` or `false`. This predicate supports coercion.
 
 - `isDate()` will ensure that the values are proper `Date` instances. This predicate supports coercion via either ISO8601, or raw numbers (in which case they're interpreted as the number of *seconds* since epoch, not milliseconds).
