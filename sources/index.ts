@@ -247,6 +247,29 @@ export const isArray = <T extends AnyStrictValidator>(spec: T) => makeValidator<
   },
 });
 
+type AnyStrictValidatorTuple = AnyStrictValidator[] | [];
+
+type InferTypeFromTuple<T extends AnyStrictValidatorTuple> = {[K in keyof T]: InferType<T[K]>};
+
+export const isTuple = <T extends AnyStrictValidatorTuple>(spec: T) => makeValidator<unknown, InferTypeFromTuple<T>>({
+  test: (value, state): value is InferTypeFromTuple<T> => {
+    if (!Array.isArray(value))
+      return pushError(state, `Expected a tuple (got ${getPrintable(value)})`);
+
+    let valid = hasExactLength(spec.length)(value, {...state});
+
+    for (let t = 0, T = value.length; t < T && t < spec.length; ++t) {
+      valid = spec[t](value[t], {...state, p: computeKey(state, t), coercion: makeSetter(value, t)}) && valid;
+
+      if (!valid && state?.errors == null) {
+        break;
+      }
+    }
+
+    return valid;
+  },
+});
+
 type DeriveIndexUnlessNull<T extends AnyStrictValidator | null> = T extends null ? {} : InferType<T>;
 
 export const isDict = <T extends AnyStrictValidator>(spec: T, {
@@ -447,7 +470,7 @@ export const hasMaxLength = <T extends {length: number}>(length: number) => make
 
 export const hasExactLength = <T extends {length: number}>(length: number) => makeValidator<T>({
   test: (value, state) => {
-    if (!(value.length <= length))
+    if (!(value.length === length))
       return pushError(state, `Expected to have a length of exactly ${length} elements (got ${value.length})`);
 
     return true;
@@ -732,7 +755,7 @@ export const hasKeyRelationship = (subject: string, relationship: KeyRelationshi
 
       if (problems.length >= 1)
         return pushError(state, `Property "${subject}" ${spec.message} ${plural(problems.length, `property`, `properties`)} ${problems.map(name => `"${name}"`).join(`, `)}`);
-      
+
       return true;
     },
   })

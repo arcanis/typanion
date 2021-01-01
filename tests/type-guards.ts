@@ -38,6 +38,17 @@ import * as t from '../sources';
     }
 };
 
+(foo: unknown) => {
+    if (true) {
+        // @ts-expect-error
+        const bar: [string, number, boolean] = foo;
+    }
+
+    if (t.isTuple([t.isString(), t.isNumber(), t.isBoolean()])(foo)) {
+        const bar: [string, number, boolean] = foo;
+    }
+};
+
 {
     const foo = [1, 2];
 

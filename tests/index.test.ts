@@ -64,6 +64,17 @@ const VALIDATION_TESTS: {
     [[42], false],
   ],
 }, {
+  validator: () => t.isTuple([t.isString(), t.isNumber(), t.isBoolean()]),
+  tests: [
+    [{}, false],
+    [[], false],
+    [[`foo`], false],
+    [[`foo`, 42], false],
+    [[`foo`, 42, true], true],
+    [[`foo`, 42, true, false], false],
+    [[`foo`, true, 42], false],
+  ],
+}, {
   validator: () => t.isObject({}, {extra: t.isUnknown()}),
   tests: [
     [{}, true],
@@ -307,6 +318,11 @@ const COERCION_TESTS: {
   validator: () => t.isArray(t.isBoolean()),
   tests: [
     [[`true`], [], [true]],
+  ],
+}, {
+  validator: () => t.isTuple([t.isString(), t.isNumber(), t.isBoolean()]),
+  tests: [
+    [[`hello`, `42`, `true`], [], [`hello`, 42, true]],
   ],
 }, {
   validator: () => t.isDict(t.isBoolean()),
