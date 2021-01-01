@@ -314,7 +314,7 @@ const COERCION_TESTS: {
     [{foo: `true`}, [], {foo: [true]}],
   ],
 }, {
-validator: () => t.isObject({foo: t.isArray(t.isBoolean(), {delimiter: /,/})}),
+  validator: () => t.isObject({foo: t.isArray(t.isBoolean(), {delimiter: /,/})}),
   tests: [
     [{foo: `true,false`}, [], {foo: [true, false]}],
   ],
