@@ -309,6 +309,16 @@ const COERCION_TESTS: {
     [[`true`], [], [true]],
   ],
 }, {
+  validator: () => t.isObject({foo: t.isArray(t.isBoolean(), {delimiter: /,/})}),
+  tests: [
+    [{foo: `true`}, [], {foo: [true]}],
+  ],
+}, {
+validator: () => t.isObject({foo: t.isArray(t.isBoolean(), {delimiter: /,/})}),
+  tests: [
+    [{foo: `true,false`}, [], {foo: [true, false]}],
+  ],
+}, {
   validator: () => t.isDict(t.isBoolean()),
   tests: [
     [{foo: `true`}, [], {foo: true}],
