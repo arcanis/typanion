@@ -251,24 +251,28 @@ type AnyStrictValidatorTuple = AnyStrictValidator[] | [];
 
 type InferTypeFromTuple<T extends AnyStrictValidatorTuple> = {[K in keyof T]: InferType<T[K]>};
 
-export const isTuple = <T extends AnyStrictValidatorTuple>(spec: T) => makeValidator<unknown, InferTypeFromTuple<T>>({
-  test: (value, state): value is InferTypeFromTuple<T> => {
-    if (!Array.isArray(value))
-      return pushError(state, `Expected a tuple (got ${getPrintable(value)})`);
+export const isTuple = <T extends AnyStrictValidatorTuple>(spec: T) => {
+  const lengthValidator = hasExactLength(spec.length);
 
-    let valid = hasExactLength(spec.length)(value, {...state});
+  return makeValidator<unknown, InferTypeFromTuple<T>>({
+    test: (value, state): value is InferTypeFromTuple<T> => {
+      if (!Array.isArray(value))
+        return pushError(state, `Expected a tuple (got ${getPrintable(value)})`);
 
-    for (let t = 0, T = value.length; t < T && t < spec.length; ++t) {
-      valid = spec[t](value[t], {...state, p: computeKey(state, t), coercion: makeSetter(value, t)}) && valid;
+      let valid = lengthValidator(value, {...state});
 
-      if (!valid && state?.errors == null) {
-        break;
+      for (let t = 0, T = value.length; t < T && t < spec.length; ++t) {
+        valid = spec[t](value[t], {...state, p: computeKey(state, t), coercion: makeSetter(value, t)}) && valid;
+
+        if (!valid && state?.errors == null) {
+          break;
+        }
       }
-    }
 
-    return valid;
-  },
-});
+      return valid;
+    },
+  });
+};
 
 type DeriveIndexUnlessNull<T extends AnyStrictValidator | null> = T extends null ? {} : InferType<T>;
 
