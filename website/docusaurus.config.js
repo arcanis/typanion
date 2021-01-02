@@ -2,7 +2,7 @@ module.exports = {
   title: `Typanion`,
   tagline: `Type-safe runtime type validation with no dependencies`,
   url: `https://mael.dev/typanion/`,
-  baseUrl: process.env.CONTEXT === `production` ? `/clipanion/` : `/`,
+  baseUrl: process.env.CONTEXT === `production` ? `/typanion/` : `/`,
   onBrokenLinks: `throw`,
   onBrokenMarkdownLinks: `warn`,
   favicon: `logo.svg`,
