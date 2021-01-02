@@ -64,6 +64,17 @@ const VALIDATION_TESTS: {
     [[42], false],
   ],
 }, {
+  validator: () => t.isTuple([t.isString(), t.isNumber(), t.isBoolean()]),
+  tests: [
+    [{}, false],
+    [[], false],
+    [[`foo`], false],
+    [[`foo`, 42], false],
+    [[`foo`, 42, true], true],
+    [[`foo`, 42, true, false], false],
+    [[`foo`, true, 42], false],
+  ],
+}, {
   validator: () => t.isObject({}, {extra: t.isUnknown()}),
   tests: [
     [{}, true],
@@ -147,21 +158,23 @@ const VALIDATION_TESTS: {
   ],
 }];
 
-for (const {validator, tests} of VALIDATION_TESTS) {
-  describe(`Validation for ${validator.toString()}`, () => {
-    const schema = validator();
+describe(`Validation Tests`, () => {
+  for (const {validator, tests} of VALIDATION_TESTS) {
+    describe(`Validation for ${validator.toString()}`, () => {
+      const schema = validator();
 
-    for (const [value, expectation] of tests) {
-      const what = expectation
-        ? `allow`
-        : `disallow`;
+      for (const [value, expectation] of tests) {
+        const what = expectation
+          ? `allow`
+          : `disallow`;
 
-      it(`it should ${what} ${JSON.stringify(value)}`, () => {
-        expect(schema(value)).to.equal(expectation);
-      });
-    }
-  });
-}
+        it(`it should ${what} ${JSON.stringify(value)}`, () => {
+          expect(schema(value)).to.equal(expectation);
+        });
+      }
+    });
+  }
+})
 
 const ERROR_TESTS: {
   validator: () => t.StrictValidator<unknown, any>;
@@ -319,6 +332,16 @@ const COERCION_TESTS: {
     [{foo: `true,false`}, [], {foo: [true, false]}],
   ],
 }, {
+  validator: () => t.isTuple([t.isString(), t.isNumber(), t.isBoolean()]),
+  tests: [
+    [[`hello`, `42`, `true`], [], [`hello`, 42, true]],
+  ],
+}, {
+  validator: () => t.isObject({foo: t.isTuple([t.isString(), t.isNumber(), t.isBoolean()], {delimiter: /,/})}),
+  tests: [
+    [{foo: `hello,42,true`}, [], {foo: [`hello`, 42, true]}],
+  ],
+}, {
   validator: () => t.isDict(t.isBoolean()),
   tests: [
     [{foo: `true`}, [], {foo: true}],
@@ -336,28 +359,30 @@ const COERCION_TESTS: {
   ],
 }];
 
-for (const {validator, tests} of COERCION_TESTS) {
-  describe(`Coercions for ${validator.toString()}`, () => {
-    const schema = validator();
+describe(`Coercion Tests`, () => {
+  for (const {validator, tests} of COERCION_TESTS) {
+    describe(`Coercions for ${validator.toString()}`, () => {
+      const schema = validator();
 
-    for (const [value, errorExpectations, coercionExpectation] of tests) {
-      const what = errorExpectations.length > 0
-        ? `Doesn't coerce`
-        : `Coerces`;
+      for (const [value, errorExpectations, coercionExpectation] of tests) {
+        const what = errorExpectations.length > 0
+          ? `Doesn't coerce`
+          : `Coerces`;
 
-      it(`${what} ${JSON.stringify(value)}, as expected`, () => {
-        const errors: string[] = [];
-        const coercions: t.Coercion[] = [];
+        it(`${what} ${JSON.stringify(value)}, as expected`, () => {
+          const errors: string[] = [];
+          const coercions: t.Coercion[] = [];
 
-        const check = schema(value, {errors, coercions});
-        expect(errors).to.deep.equal(errorExpectations);
-        expect(check).to.equal(errorExpectations.length === 0);
+          const check = schema(value, {errors, coercions});
+          expect(errors).to.deep.equal(errorExpectations);
+          expect(check).to.equal(errorExpectations.length === 0);
 
-        if (check) {
-          for (const [, op] of coercions) op();
-          expect(value).to.deep.equal(coercionExpectation);
-        }
-      });
-    }
-  });
-}
+          if (check) {
+            for (const [, op] of coercions) op();
+            expect(value).to.deep.equal(coercionExpectation);
+          }
+        });
+      }
+    });
+  }
+})
