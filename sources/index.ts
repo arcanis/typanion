@@ -110,6 +110,22 @@ export const isString = () => makeValidator<unknown, string>({
   },
 });
 
+export function isEnum<T extends boolean | string | number | null>(values: T[]): StrictValidator<unknown, T>;
+export function isEnum<T>(enumSpec: Record<string, T>): StrictValidator<unknown, T>;
+export function isEnum<T>(enumSpec: T): StrictValidator<unknown, T> {
+  const valuesArray = Array.isArray(enumSpec) ? enumSpec : Object.values(enumSpec);
+  const values = new Set(valuesArray);
+
+  return makeValidator<unknown, T>({
+    test: (value, state): value is T => {
+      if (!values.has(value))
+        return pushError(state, `Expected a valid enumeration value (got ${getPrintable(value)})`);
+
+      return true;
+    },
+  });
+}
+
 const BOOLEAN_COERCIONS = new Map<unknown, boolean>([
   [`true`, true],
   [`True`, true],

@@ -38,6 +38,27 @@ import * as t from '../sources';
     }
 };
 
+
+(foo: unknown) => {
+    if (true) {
+        // @ts-expect-error
+        const bar: 'foo' | 'bar' = foo;
+    }
+
+    if (t.isEnum(['foo', 'bar'])(foo)) {
+        const bar: 'foo' | 'bar' = foo;
+    }
+
+    enum Enum {
+        FOO = 'foo',
+        BAR = 'bar',
+    };
+
+    if (t.isEnum(Enum)(foo)) {
+        const bar: 'foo' | 'bar' = foo;
+    }
+};
+
 (foo: unknown) => {
     if (true) {
         // @ts-expect-error

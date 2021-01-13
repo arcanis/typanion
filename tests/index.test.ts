@@ -47,6 +47,20 @@ const VALIDATION_TESTS: {
     [undefined, false],
   ],
 }, {
+  validator: () => t.isEnum([`foo`, `bar`]),
+  tests: [
+    [`foo`, true],
+    [`bar`, true],
+    [`baz`, false],
+  ],
+}, {
+  validator: () => t.isEnum({FOO: `foo`, BAR: `bar`}),
+  tests: [
+    [`foo`, true],
+    [`bar`, true],
+    [`baz`, false],
+  ],
+}, {
   validator: () => t.isObject({foo: t.isString()}),
   tests: [
     [{}, false],
@@ -202,6 +216,16 @@ const ERROR_TESTS: {
   tests: [
     [JSON.parse(`{"constructor": "foo"}`), [`.constructor: Unsafe property name`]],
     [JSON.parse(`{"__proto__": "foo"}`), [`.__proto__: Unsafe property name`]],
+  ],
+}, {
+  validator: () => t.isEnum([`foo`, `bar`]),
+  tests: [
+    [`baz`, [`.: Expected a valid enumeration value (got "baz")`]],
+  ],
+}, {
+  validator: () => t.isEnum({FOO: `foo`, BAR: `bar`}),
+  tests: [
+    [`baz`, [`.: Expected a valid enumeration value (got "baz")`]],
   ],
 }, {
   validator: () => t.isOneOf([t.isString(), t.isBoolean()]),

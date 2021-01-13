@@ -35,6 +35,20 @@ const validate = t.isDict(values, {keys?});
 
 Ensure that the values are all a standard JavaScript objects containing an arbitrary number of fields whose values all match the given schema. The `keys` option can be used to apply a schema on the keys as well (this will always have to be strings, so you'll likely want to use `applyCascade(isString(), [...])` to define the pattern).
 
+## `isEnum`
+
+```ts
+const validate = t.isEnum(values);
+```
+
+Ensure that the values are all amongst the allowed set of values. This predicate accepts either an array of literals as parameter, or a record. Since the classic TS enums also happen to be records, you can use them as well:
+
+```ts
+enum MyEnum { /* ... */ };
+
+const validate = t.isEnum(MyEnum);
+```
+
 ## `isLiteral`
 
 ```ts
