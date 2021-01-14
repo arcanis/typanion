@@ -1,10 +1,13 @@
-export type Coercion = [string, () => void];
+export type BoundCoercionFn = () => BoundCoercionFn;
+export type CoercionFn = (v: any) => BoundCoercionFn;
+
+export type Coercion = [string, BoundCoercionFn];
 
 export type ValidationState = {
   p?: string,
   errors?: string[],
   coercions?: Coercion[],
-  coercion?: (val: any) => void,
+  coercion?: CoercionFn,
 };
 
 export type Trait<Type> = {__trait: Type};
@@ -61,6 +64,14 @@ export function computeKey(state: ValidationState | undefined, key: string | num
   } else {
     return `${state?.p ?? `.`}[${JSON.stringify(key)}]`;
   }
+}
+
+export function makeCoercionFn(target: any, key: any): CoercionFn {
+  return (v: any) => {
+    const previous = target[key];
+    target[key] = v;
+    return makeCoercionFn(target, key).bind(null, previous);
+  };
 }
 
 export function makeSetter(target: any, key: any) {
@@ -262,7 +273,7 @@ export const isArray = <T extends AnyStrictValidator>(spec: T, {delimiter}: {del
     let valid = true;
 
     for (let t = 0, T = value.length; t < T; ++t) {
-      valid = spec(value[t], {...state, p: computeKey(state, t), coercion: makeSetter(value, t)}) && valid;
+      valid = spec(value[t], {...state, p: computeKey(state, t), coercion: makeCoercionFn(value, t)}) && valid;
 
       if (!valid && state?.errors == null) {
         break;
@@ -298,7 +309,7 @@ export const isTuple = <T extends AnyStrictValidatorTuple>(spec: T, {delimiter}:
       let valid = lengthValidator(value, {...state});
 
       for (let t = 0, T = value.length; t < T && t < spec.length; ++t) {
-        valid = spec[t](value[t], {...state, p: computeKey(state, t), coercion: makeSetter(value, t)}) && valid;
+        valid = spec[t](value[t], {...state, p: computeKey(state, t), coercion: makeCoercionFn(value, t)}) && valid;
 
         if (!valid && state?.errors == null) {
           break;
@@ -338,7 +349,7 @@ export const isDict = <T extends AnyStrictValidator>(spec: T, {
         continue;
       }
 
-      if (!spec(sub, {...state, p: computeKey(state, key), coercion: makeSetter(value, key)})) {
+      if (!spec(sub, {...state, p: computeKey(state, key), coercion: makeCoercionFn(value, key)})) {
         valid = false;
         continue;
       }
@@ -384,7 +395,7 @@ export const isObject = <T extends {[P in keyof T]: AnyStrictValidator}, Unknown
             : undefined;
 
           if (typeof spec !== `undefined`) {
-            valid = spec(sub, {...state, p: computeKey(state, key), coercion: makeSetter(value, key)}) && valid;
+            valid = spec(sub, {...state, p: computeKey(state, key), coercion: makeCoercionFn(value, key)}) && valid;
           } else if (extraSpec === null) {
             valid = pushError({...state, p: computeKey(state, key)}, `Extraneous property (got ${getPrintable(sub)})`);
           } else {
@@ -463,12 +474,41 @@ export const isOneOf = <T extends AnyStrictValidator>(specs: Array<T>, {
 
 export const applyCascade = <T extends AnyStrictValidator>(spec: T, followups: Array<StrictTest<InferType<T>, InferType<T>> | LooseTest<InferType<T>>>) => makeValidator<unknown, InferType<T>>({
   test: (value, state): value is InferType<T> => {
-    if (!spec(value, state))
+    const context = {value: value as any};
+
+    const subCoercion = typeof state?.coercions !== `undefined`
+      ? makeCoercionFn(context, `value`) : undefined;
+
+    const subCoercions = typeof state?.coercions !== `undefined`
+      ? [] as Coercion[] : undefined;
+
+    if (!spec(value, {...state, coercion: subCoercion, coercions: subCoercions}))
       return false;
 
-    return followups.every(spec => {
-      return spec(value as InferType<T>, state);
-    });
+    const reverts: BoundCoercionFn[] = [];
+    if (typeof subCoercions !== `undefined`)
+      for (const [, coercion] of subCoercions)
+        reverts.push(coercion());
+
+    try {
+      if (typeof state?.coercions !== `undefined`) {
+        if (typeof state?.coercion === `undefined`)
+          return pushError(state, `Unbound coercion result`);
+
+        if (context.value !== value)
+          state.coercions.push([state.p ?? `.`, state.coercion.bind(null, context.value)]);
+
+        state?.coercions?.push(...subCoercions!);
+      }
+
+      return followups.every(spec => {
+        return spec(context.value as InferType<T>, state);
+      });
+    } finally {
+      for (const revert of reverts) {
+        revert();
+      }
+    }
   },
 });
 

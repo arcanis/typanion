@@ -381,6 +381,13 @@ const COERCION_TESTS: {
     [{val: {foo: `true`, bar: `hello`}}, [], {val: {foo: true, bar: `hello`}}],
     [{val: {foo: `true`, bar: `world`}}, [], {val: {foo: `true`, bar: `world`}}],
   ],
+}, {
+  validator: () => t.isDict(t.applyCascade(t.isNumber(), [t.isInteger()])),
+  tests: [
+    [{val: 42}, [], {val: 42}],
+    [{val: `42`}, [], {val: 42}],
+    [{val: `42.21`}, [`.val: Expected to be an integer (got 42.21)`]],
+  ],
 }];
 
 describe(`Coercion Tests`, () => {
@@ -409,4 +416,14 @@ describe(`Coercion Tests`, () => {
       }
     });
   }
+
+  it(`Doesn't apply coercion if a cascading predicates fail`, () => {
+    const schema = t.isDict(t.applyCascade(t.isNumber(), [t.isInteger()]));
+    const val = {val: `42.21`};
+
+    const coercions: t.Coercion[] = [];
+    expect(schema(val)).to.equal(false);
+
+    expect(val).to.deep.equal({val: `42.21`});
+  });
 })
