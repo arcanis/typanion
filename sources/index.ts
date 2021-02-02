@@ -492,11 +492,12 @@ export const applyCascade = <T extends AnyStrictValidator>(spec: T, followups: A
 
     try {
       if (typeof state?.coercions !== `undefined`) {
-        if (typeof state?.coercion === `undefined`)
-          return pushError(state, `Unbound coercion result`);
+        if (context.value !== value) {
+          if (typeof state?.coercion === `undefined`)
+            return pushError(state, `Unbound coercion result`);
 
-        if (context.value !== value)
           state.coercions.push([state.p ?? `.`, state.coercion.bind(null, context.value)]);
+        }
 
         state?.coercions?.push(...subCoercions!);
       }
@@ -818,19 +819,25 @@ const keyRelationships = {
   },
 };
 
-export const hasKeyRelationship = (subject: string, relationship: KeyRelationship, others: string[]) => {
+export const hasKeyRelationship = (subject: string, relationship: KeyRelationship, others: string[], {
+  ignore = [],
+}: {
+  ignore?: any[],
+} = {}) => {
+  const skipped = new Set(ignore);
+
   const otherSet = new Set(others);
   const spec = keyRelationships[relationship];
 
   return makeValidator<{[key: string]: unknown}>({
     test: (value, state) => {
       const keys = new Set(Object.keys(value));
-      if (!keys.has(subject))
+      if (!keys.has(subject) || skipped.has(value[subject]))
         return true;
 
       const problems: string[] = [];
       for (const key of otherSet)
-        if (keys.has(key) !== spec.expect)
+        if ((keys.has(key) && !skipped.has(value[key])) !== spec.expect)
           problems.push(key);
 
       if (problems.length >= 1)

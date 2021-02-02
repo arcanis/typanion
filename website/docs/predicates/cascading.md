@@ -24,10 +24,10 @@ Ensure that the objects don't contain any of the specified keys.
 ## `hasKeyRelationship`
 
 ```ts
-const validate = t.hasKeyRelationship(subjectKey, relationship, otherKeys);
+const validate = t.hasKeyRelationship(subjectKey, relationship, otherKeys, {ignore?});
 ```
 
-Ensure that when the subject key is found, the specified relationship (one of `t.KeyRelationship.Forbids` or `t.KeyRelationship.Requires`) is true.
+Ensure that when the subject key is found, the specified relationship (one of `t.KeyRelationship.Forbids` or `t.KeyRelationship.Requires`) is true. Values listed in `ignore` will lead their properties to be considered missing for the purpose of this check.
 
 ## `hasMaxLength`
 
