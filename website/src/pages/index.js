@@ -8,7 +8,7 @@ import React                from 'react';
 import styles               from './styles.module.css';
 
 if (typeof window !== `undefined` && !window.location.pathname.endsWith(`/`))
-  window.history.replaceState(null, null, `${window.location.ref}/`);
+  window.history.replaceState(null, null, `${window.location.href}/`);
 
 const features = [{
   title: `TypeScript integration`,
