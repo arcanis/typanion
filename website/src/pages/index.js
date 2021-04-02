@@ -7,6 +7,9 @@ import React                from 'react';
 
 import styles               from './styles.module.css';
 
+if (!window.location.pathname.endsWith(`/`))
+  window.history.replaceState(null, null, `${window.location.ref}/`);
+
 const features = [{
   title: `TypeScript integration`,
   description: `Typanion provides strong type inference; if your validator functions pass, TypeScript will refine values accordingly.`,
