@@ -7,7 +7,7 @@ import React                from 'react';
 
 import styles               from './styles.module.css';
 
-if (!window.location.pathname.endsWith(`/`))
+if (typeof window !== `undefined` && !window.location.pathname.endsWith(`/`))
   window.history.replaceState(null, null, `${window.location.ref}/`);
 
 const features = [{
