@@ -10,6 +10,10 @@ module.exports = {
   projectName: `typanion`,
   themeConfig: {
     sidebarCollapsible: false,
+    algolia: {
+      apiKey: `47075646ffba88bf3475b4b640843da6`,
+      indexName: `typanion`,
+    },
     navbar: {
       title: `Typanion`,
       logo: {
