@@ -128,6 +128,9 @@ const VALIDATION_TESTS: {
     [{}, true],
     [{foo: 42}, true],
     [{foo: `foo`}, false],
+    [{foo: 42, bar: 42}, true],
+    [{foo: 42, bar: `bar`}, false],
+    [{foo: `foo`, bar: 42}, false],
     [42, false],
   ],
 }, {
