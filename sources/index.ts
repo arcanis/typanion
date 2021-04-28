@@ -335,7 +335,7 @@ export const isDict = <T extends AnyStrictValidator>(spec: T, {
     const keys = Object.keys(value);
 
     let valid = true;
-    for (let t = 0, T = keys.length && (valid || state?.errors != null); t < T; ++t) {
+    for (let t = 0, T = keys.length; t < T && (valid || state?.errors != null); ++t) {
       const key = keys[t];
       const sub = (value as {[key: string]: unknown})[key];
 
