@@ -99,6 +99,7 @@ export function isLiteral(expected: null): StrictValidator<unknown, null>;
 export function isLiteral(expected: true): StrictValidator<unknown, true>;
 export function isLiteral(expected: false): StrictValidator<unknown, false>;
 export function isLiteral<T extends number>(expected: T): StrictValidator<unknown, T>;
+export function isLiteral<T extends bigint>(expected: T): StrictValidator<unknown, T>;
 export function isLiteral<T extends string>(expected: T): StrictValidator<unknown, T>;
 export function isLiteral<T>(expected: T): StrictValidator<unknown, T>;
 export function isLiteral<T>(expected: T) {

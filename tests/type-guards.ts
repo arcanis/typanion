@@ -25,6 +25,10 @@ import * as t from '../sources';
     if (t.isLiteral(42)(foo)) {
         const bar: 42 = foo;
     }
+
+    if (t.isLiteral(42n)(foo)) {
+        const bar: 42n = foo;
+    }
 }
 
 (foo: unknown) => {
