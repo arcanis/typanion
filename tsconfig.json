@@ -7,7 +7,6 @@
     ],
     "module": "commonjs",
     "noEmit": true,
-    "outDir": "lib",
     "strict": true,
     "target": "es2017"
   },

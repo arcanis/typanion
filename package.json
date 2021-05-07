@@ -12,9 +12,9 @@
     "website"
   ],
   "devDependencies": {
+    "@rollup/plugin-typescript": "^8.2.1",
     "@types/chai": "^4.2.11",
     "@types/mocha": "^7.0.2",
-    "@wessberg/rollup-plugin-ts": "^1.2.25",
     "chai": "^4.2.0",
     "mocha": "^8.0.1",
     "rollup": "^2.17.0",
