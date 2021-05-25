@@ -34,40 +34,40 @@ import * as t from '../sources';
 }
 
 {
-    const schema = t.isEnum(["a", "b"]);
+    const schema = t.isEnum([`a`, `b`]);
     type MyType = t.InferType<typeof schema>;
 
     // @ts-expect-error
-    const foo: MyType = "c";
+    const foo: MyType = `c`;
 }
 
 {
-    const schema = t.isEnum(["a", "b"] as const);
+    const schema = t.isEnum([`a`, `b`] as const);
     type MyType = t.InferType<typeof schema>;
 
     // @ts-expect-error
-    const foo: MyType = "c";
+    const foo: MyType = `c`;
 }
 
 {
     const schema = t.isObject({
-        enum: t.isEnum(["a", "b"] as const)
+        enum: t.isEnum([`a`, `b`] as const)
     });
     type MyType = t.InferType<typeof schema>;
 
     // @ts-expect-error
-    const foo: MyType = { enum: "c" };
+    const foo: MyType = {enum: `c`};
 }
 
 // Does not currently work, see #9
 // {
 //     const schema = t.isObject({
-//         enum: t.isEnum(["a", "b"])
+//         enum: t.isEnum([`a`, `b`])
 //     } as const);
 //     type MyType = t.InferType<typeof schema>;
 //
 //     // @ts-expect-error
-//     const foo: MyType = { enum: "c" };
+//     const foo: MyType = {enum: `c`};
 // }
 
 {
