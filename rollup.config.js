@@ -1,14 +1,16 @@
-import ts from "@wessberg/rollup-plugin-ts";
+import ts from "@rollup/plugin-typescript";
 
 export default {
   input: './sources/index.ts',
   output: [
     {
-      file: 'lib/index.mjs',
+      dir: 'lib',
+      entryFileNames: '[name].mjs',
       format: 'es'
     },
     {
-      file: 'lib/index.js',
+      dir: 'lib',
+      entryFileNames: '[name].js',
       format: 'cjs'
     },
   ],
