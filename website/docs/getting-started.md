@@ -53,7 +53,7 @@ if (!isBlogPost(userData, {errors})) {
 }
 ```
 
-Finally, you can instruct Clipanion to coerce values into the expected types if possible:
+Finally, you can instruct Typanion to coerce values into the expected types if possible:
 
 ```ts
 const coercions: t.Coercion[] = [];
