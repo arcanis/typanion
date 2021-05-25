@@ -49,7 +49,7 @@ Typanion can also list provide detailed errors if you provide an error array:
 const errors: string[] = [];
 
 if (!isBlogPost(userData, {errors})) {
-    throw new Error(`Validation errors:\n${errors.join('\n')}`);
+    throw new Error(`Validation errors:\n${errors.join(`\n`)}`);
 }
 ```
 
