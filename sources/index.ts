@@ -700,7 +700,7 @@ export const isISO8601 = () => makeValidator<string>({
     if (!iso8601RegExp.test(value))
       return pushError(state, `Expected to be a valid ISO 8601 date string (got ${getPrintable(value)})`);
 
-    return false;
+    return true;
   },
 });
 
