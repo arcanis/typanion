@@ -497,9 +497,15 @@ export const isDict = <T extends AnyStrictValidator>(spec: T, {
   },
 });
 
+// https://stackoverflow.com/a/68261113/880703
+type ExtractIndex<T> = {[K in keyof T as {} extends Record<K, 1> ? K : never]: T[K]};
+type RemoveIndex<T> = {[K in keyof T as {} extends Record<K, 1> ? never : K]: T[K]};
+
 // https://stackoverflow.com/a/56146934/880703
 type UndefinedProperties<T> = {[P in keyof T]-?: undefined extends T[P] ? P : never}[keyof T]
-type ToOptional<T> = Partial<Pick<T, UndefinedProperties<T>>> & Pick<T, Exclude<keyof T, UndefinedProperties<T>>>
+type UndefinedToOptional<T> = Partial<Pick<T, UndefinedProperties<T>>> & Pick<T, Exclude<keyof T, UndefinedProperties<T>>>
+
+type ObjectType<T> = UndefinedToOptional<RemoveIndex<T>> & ExtractIndex<T>;
 
 export const isObject = <T extends {[P in keyof T]: AnyStrictValidator}, UnknownValidator extends AnyStrictValidator | null = null>(props: T, {
   extra: extraSpec = null,
@@ -509,7 +515,7 @@ export const isObject = <T extends {[P in keyof T]: AnyStrictValidator}, Unknown
   const specKeys = Object.keys(props);
 
   // We need to store this type inside an alias, otherwise TS seems to miss the "value is ..." guard
-  type RequestedShape = ToOptional<{[P in keyof T]: InferType<(typeof props)[P]>} & DeriveIndexUnlessNull<UnknownValidator>>;
+  type RequestedShape = ObjectType<{[P in keyof T]: InferType<(typeof props)[P]>} & DeriveIndexUnlessNull<UnknownValidator>>;
 
   return makeValidator<unknown, RequestedShape>({
     test: (value, state): value is RequestedShape => {
