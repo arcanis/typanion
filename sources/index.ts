@@ -105,7 +105,7 @@ export function isLiteral<T>(expected: T) {
   return makeValidator<unknown, T>({
     test: (value, state): value is T => {
       if (value !== expected)
-        return pushError(state, `Expected a literal (got ${getPrintable(expected)})`);
+        return pushError(state, `Expected a literal (got ${getPrintable(value)})`);
 
       return true;
     },
