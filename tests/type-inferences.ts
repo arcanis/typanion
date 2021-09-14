@@ -59,6 +59,16 @@ import * as t from '../sources';
     const foo: MyType = {enum: `c`};
 }
 
+{
+    const schema = t.isPartial({
+        foo: t.isString()
+    });
+    type MyType = t.InferType<typeof schema>;
+
+    const foo: MyType = {foo: `c`};
+    const bar: MyType = {foo: `c`, test: 42};
+}
+
 // Does not currently work, see #9
 // {
 //     const schema = t.isObject({

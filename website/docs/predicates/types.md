@@ -71,7 +71,15 @@ Ensure that the values are all numbers. This predicate supports coercion.
 const validate = t.isObject(props, {extra?});
 ```
 
-Ensure that the values are plain old objects whose properties match the given shape. Extraneous properties will be aggregated and validated against the optional `extra` schema.
+Ensure that the values are plain old objects whose properties match the given shape. Extraneous properties will be aggregated and validated against the optional `extra` schema. If you need to validate against an object that may have any number of extraneous properties, either use `isPartial` instead or set `extra` to `isDict(isUnknown())`.
+
+## `isPartial`
+
+```ts
+const validate = t.isPartial(props);
+```
+
+Same as `isObject`, but allows any number of extraneous properties.
 
 ## `isString`
 

@@ -420,6 +420,10 @@ export const isObject = <T extends {[P in keyof T]: AnyStrictValidator}, Unknown
   });
 };
 
+export const isPartial = <T extends {[P in keyof T]: AnyStrictValidator}>(props: T) => {
+  return isObject(props, {extra: isDict(isUnknown())});
+};
+
 export const isInstanceOf = <T extends new (...args: any) => InstanceType<T>>(constructor: T) => makeValidator<unknown, InstanceType<T>>({
   test: (value, state): value is InstanceType<T> => {
     if (!(value instanceof constructor))
