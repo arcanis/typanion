@@ -60,6 +60,18 @@ import * as t from '../sources';
 }
 
 {
+    const schema = t.isObject({
+        map: t.isMap(t.isNumber(), t.isString())
+    });
+    type MyType = t.InferType<typeof schema>;
+
+    // @ts-expect-error
+    const foo: MyType = {map: new Map([[`42`, `foo`]])};
+
+    const bar: MyType = {map: new Map([[42, `foo`]])};
+}
+
+{
     const schema = t.isPartial({
         foo: t.isString()
     });

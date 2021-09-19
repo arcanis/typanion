@@ -39,6 +39,10 @@ export const makeTrait = <U>(value: U) => <V>() => {
   return value as U & Trait<V>;
 };
 
+export function softAssert(cond: boolean): asserts cond {
+  // It's a soft assert; we tell TypeScript about the type, but we don't need to check it
+};
+
 export function makeValidator<U, V extends U>({test}: {test: StrictTest<U, V>}): StrictValidator<U, V>;
 export function makeValidator<U, V extends U = U>({test}: {test: LooseTest<U>}): LooseValidator<U, V>;
 export function makeValidator<U, V extends U>({test}: {test: StrictTest<U, V> | LooseTest<U>}) {
@@ -72,6 +76,20 @@ export function makeCoercionFn(target: any, key: any): CoercionFn {
     target[key] = v;
     return makeCoercionFn(target, key).bind(null, previous);
   };
+}
+
+export function makeLazyCoercionFn(fn: CoercionFn, orig: any, generator: () => any): BoundCoercionFn {
+  const commit = () => {
+    fn(generator());
+    return revert;
+  };
+
+  const revert = () => {
+    fn(orig);
+    return commit;
+  };
+
+  return commit;
 }
 
 export function makeSetter(target: any, key: any) {
@@ -257,13 +275,14 @@ export const isDate = () => makeValidator<unknown, Date>({
 
 export const isArray = <T extends AnyStrictValidator>(spec: T, {delimiter}: {delimiter?: string | RegExp} = {}) => makeValidator<unknown, Array<InferType<T>>>({
   test: (value, state): value is Array<InferType<T>> => {
+    const originalValue = value;
+
     if (typeof value === `string` && typeof delimiter !== `undefined`) {
       if (typeof state?.coercions !== `undefined`) {
         if (typeof state?.coercion === `undefined`)
           return pushError(state, `Unbound coercion result`);
 
         value = value.split(delimiter);
-        state.coercions.push([state.p ?? `.`, state.coercion.bind(null, value)]);
       }
     }
 
@@ -280,9 +299,128 @@ export const isArray = <T extends AnyStrictValidator>(spec: T, {delimiter}: {del
       }
     }
 
+    if (value !== originalValue)
+      state!.coercions!.push([state!.p ?? `.`, state!.coercion!.bind(null, value)]);
+
     return valid;
   },
 });
+
+export const isSet = <T extends AnyStrictValidator>(spec: T, {delimiter}: {delimiter?: string | RegExp} = {}) => {
+  const isArrayValidator = isArray(spec, {delimiter});
+
+  return makeValidator<unknown, Set<InferType<T>>>({
+    test: (value, state): value is Set<InferType<T>> => {
+      if (Object.getPrototypeOf(value).toString() === `[object Set]`) {
+        softAssert(value instanceof Set);
+
+        if (typeof state?.coercions !== `undefined`) {
+          if (typeof state?.coercion === `undefined`)
+            return pushError(state, `Unbound coercion result`);
+
+          const originalValues = [...value];
+          const coercedValues = [...value];
+
+          if (!isArrayValidator(coercedValues, {...state, coercion: undefined}))
+            return false;
+
+          const updateValue = () => coercedValues.some((val, t) => val !== originalValues[t])
+            ? new Set(coercedValues)
+            : value;
+
+          state.coercions.push([state.p ?? `.`, makeLazyCoercionFn(state.coercion, value, updateValue)]);
+          return true;
+        } else {
+          let valid = true;
+
+          for (const subValue of value) {
+            valid = spec(subValue, {...state}) && valid;
+      
+            if (!valid && state?.errors == null) {
+              break;
+            }
+          }
+      
+          return valid;
+        }
+      }
+
+      if (typeof state?.coercions !== `undefined`) {
+        if (typeof state?.coercion === `undefined`)
+          return pushError(state, `Unbound coercion result`);
+
+        const store = {value};
+        if (!isArrayValidator(value, {...state, coercion: makeCoercionFn(store, `value`)}))
+          return false;
+
+        state.coercions.push([state.p ?? `.`, makeLazyCoercionFn(state.coercion, value, () => new Set(store.value as any))]);
+        return true;
+      }
+
+      return pushError(state, `Expected a set (got ${getPrintable(value)})`);
+    }
+  });
+};
+
+export const isMap = <TKey extends AnyStrictValidator, TValue extends AnyStrictValidator>(keySpec: TKey, valueSpec: TValue) => {
+  const isArrayValidator = isArray(isTuple([keySpec, valueSpec]));
+
+  return makeValidator<unknown, Map<InferType<TKey>, InferType<TValue>>>({
+    test: (value, state): value is Map<InferType<TKey>, InferType<TValue>> => {
+      if (Object.getPrototypeOf(value).toString() === `[object Map]`) {
+        softAssert(value instanceof Set);
+
+        if (typeof state?.coercions !== `undefined`) {
+          if (typeof state?.coercion === `undefined`)
+            return pushError(state, `Unbound coercion result`);
+
+          const originalValues = [...value];
+          const coercedValues = [...value];
+
+          if (!isArrayValidator(coercedValues, {...state, coercion: undefined}))
+            return false;
+
+          const updateValue = () => coercedValues.some((val, t) => val[0] !== originalValues[t][0] || val[1] !== originalValues[t][1])
+            ? new Map(coercedValues)
+            : value;
+
+          state.coercions.push([state.p ?? `.`, makeLazyCoercionFn(state.coercion, value, updateValue)]);
+          return true;
+        } else {
+          let valid = true;
+
+          for (const [key, subValue] of value) {
+            valid = keySpec(key, {...state}) && valid;
+            if (!valid && state?.errors == null) {
+              break;
+            }
+
+            valid = valueSpec(subValue, {...state, p: computeKey(state, key)}) && valid;
+            if (!valid && state?.errors == null) {
+              break;
+            }
+          }
+      
+          return valid;
+        }
+      }
+
+      if (typeof state?.coercions !== `undefined`) {
+        if (typeof state?.coercion === `undefined`)
+          return pushError(state, `Unbound coercion result`);
+
+        const store = {value};
+        if (!isArrayValidator(value, {...state, coercion: makeCoercionFn(store, `value`)}))
+          return false;
+
+        state.coercions.push([state.p ?? `.`, makeLazyCoercionFn(state.coercion, value, () => new Map(store.value as any))]);
+        return true;
+      }
+
+      return pushError(state, `Expected a map (got ${getPrintable(value)})`);
+    }
+  });
+};
 
 type AnyStrictValidatorTuple = AnyStrictValidator[] | [];
 
