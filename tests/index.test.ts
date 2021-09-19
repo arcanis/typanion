@@ -1,4 +1,6 @@
 import {expect} from 'chai';
+// @ts-ignore
+import util     from 'util';
 import * as t   from '../sources';
 
 const VALIDATION_TESTS: {
@@ -76,6 +78,22 @@ const VALIDATION_TESTS: {
     [[], true],
     [[`foo`], true],
     [[42], false],
+  ],
+}, {
+  validator: () => t.isSet(t.isString()),
+  tests: [
+    [new Set([]), true],
+    [new Set([`foo`]), true],
+    [new Set([42]), false],
+    [new Set([`foo`, 42]), false],
+  ],
+}, {
+  validator: () => t.isMap(t.isNumber(), t.isString()),
+  tests: [
+    [new Map([]), true],
+    [new Map([[42, `foo`]]), true],
+    [new Map([[`foo`, `bar`]]), false],
+    [new Map([[42, 42]]), false],
   ],
 }, {
   validator: () => t.isTuple([t.isString(), t.isNumber(), t.isBoolean()]),
@@ -370,6 +388,30 @@ const COERCION_TESTS: {
     [{foo: `true,false`}, [], {foo: [true, false]}],
   ],
 }, {
+  validator: () => t.isObject({foo: t.isSet(t.isBoolean())}),
+  tests: [
+    [{foo: []}, [], {foo: new Set([])}],
+    [{foo: [`true`, `false`]}, [], {foo: new Set([true, false])}],
+    [{foo: [true, false]}, [], {foo: new Set([true, false])}],
+    [{foo: new Set([true, false])}, [], {foo: new Set([true, false])}],
+    [{foo: new Set([`true`, false])}, [], {foo: new Set([true, false])}],
+  ],
+}, {
+  validator: () => t.isObject({foo: t.isSet(t.isBoolean(), {delimiter: /,/})}),
+  tests: [
+    [{foo: `true,false`}, [], {foo: new Set([true, false])}],
+    [{foo: `true,foo`}, [`.foo[1]: Expected a boolean (got "foo")`]],
+  ],
+}, {
+  validator: () => t.isObject({foo: t.isMap(t.isNumber(), t.isBoolean())}),
+  tests: [
+    [{foo: []}, [], {foo: new Map([])}],
+    [{foo: [[`42`, `false`]]}, [], {foo: new Map([[42, false]])}],
+    [{foo: [[42, false]]}, [], {foo: new Map([[42, false]])}],
+    [{foo: new Map([[42, false]])}, [], {foo: new Map([[42, false]])}],
+    [{foo: new Map([[`42`, `false`]])}, [], {foo: new Map([[42, false]])}],
+  ],
+}, {
   validator: () => t.isTuple([t.isString(), t.isNumber(), t.isBoolean()]),
   tests: [
     [[`hello`, `42`, `true`], [], [`hello`, 42, true]],
@@ -414,7 +456,7 @@ describe(`Coercion Tests`, () => {
           ? `Doesn't coerce`
           : `Coerces`;
 
-        it(`${what} ${JSON.stringify(value)}, as expected`, () => {
+        it(`${what} ${util.format(value)}, as expected`, () => {
           const errors: string[] = [];
           const coercions: t.Coercion[] = [];
 
@@ -424,7 +466,13 @@ describe(`Coercion Tests`, () => {
 
           if (check) {
             for (const [, op] of coercions) op();
-            expect(value).to.deep.equal(coercionExpectation);
+            try {
+              expect(value).to.deep.equal(coercionExpectation);
+            } catch (err) {
+              // @ts-ignore
+              console.log({value, coercionExpectation});
+              throw err;
+            }
           }
         });
       }

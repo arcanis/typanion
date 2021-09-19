@@ -57,6 +57,14 @@ const validate = t.isLiteral(value);
 
 Ensure that the values are strictly equal to the specified expected value. It's an handy tool that you can combine with `oneOf` and `object` to parse structures similar to Redux actions, etc.
 
+## `isMap`
+
+```ts
+const validate = t.isMap(keySpec, valueSpec);
+```
+
+Ensure that the values are a `Map` instance. This predicate supports coercion under the form of arrays of tuples (like what standard maps spread into).
+
 ## `isNumber`
 
 ```ts
@@ -80,6 +88,14 @@ const validate = t.isPartial(props);
 ```
 
 Same as `isObject`, but allows any number of extraneous properties.
+
+## `isSet`
+
+```ts
+const validate = t.isSet(values, {delimiter?});
+```
+
+Ensure that the values are a `Set` instance. This predicate supports coercion as either regular arrays or, if configured, delimiter-separated strings.
 
 ## `isString`
 
