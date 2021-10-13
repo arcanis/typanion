@@ -13,7 +13,7 @@ yarn add typanion
 ## Why
 
 - Typanion can validate nested arbitrary data structures
-- Typanion is type-safe; it uses [type predicates](https://www.typescriptlang.org/docs/handbook/advanced-types.html#user-defined-type-guards)
+- Typanion is type-safe; it uses [type predicates](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates)
 - Typanion allows you to derive types from your schemas
 - Typanion can report detailed error reports
 
