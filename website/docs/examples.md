@@ -18,7 +18,7 @@ isPort(42000);
 
 ```ts
 const isDiv = t.isObject({
-    tagName: t.literal(`DIV`),
+    tagName: t.isLiteral(`DIV`),
 }, {
     extra: t.isUnknown(),
 });
@@ -30,7 +30,7 @@ isDiv({tagName: `div`, appendChild: () => {}});
 
 ```ts
 const isModel = t.isObject({
-    uid: t.String(),
+    uid: t.isString(),
 }, {
     extra: t.isDict(t.isNumber()),
 });
