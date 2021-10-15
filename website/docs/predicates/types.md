@@ -55,7 +55,7 @@ const validate = t.isEnum(MyEnum);
 const validate = t.isLiteral(value);
 ```
 
-Ensure that the values are strictly equal to the specified expected value. It's an handy tool that you can combine with `oneOf` and `object` to parse structures similar to Redux actions, etc.
+Ensure that the values are strictly equal to the specified expected value. It's an handy tool that you can combine with `isOneOf` and `isObject` to parse structures similar to Redux actions, etc.
 
 ## `isMap`
 
