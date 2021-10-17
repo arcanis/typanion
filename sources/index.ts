@@ -39,7 +39,35 @@ export const makeTrait = <U>(value: U) => <V>() => {
   return value as U & Trait<V>;
 };
 
-export function softAssert(cond: boolean): asserts cond {
+export class TypeAssertionError extends Error {
+  constructor({errors}: {errors?: string[]} = {}) {
+    let errorMessage = `Type mismatch`;
+
+    if (errors && errors.length > 0) {
+      errorMessage += `\n`;
+      for (const error of errors) {
+        errorMessage += `\n- ${error}`;
+      }
+    }
+
+    super(errorMessage);
+  }
+}
+
+export function assert<T extends AnyStrictValidator>(val: unknown, validator: T): asserts val is InferType<T> {
+  if (!validator(val)) {
+    throw new TypeAssertionError();
+  }
+}
+
+export function assertWithErrors<T extends AnyStrictValidator>(val: unknown, validator: T): asserts val is InferType<T> {
+  const errors: string[] = [];
+  if (!validator(val, {errors})) {
+    throw new TypeAssertionError({errors});
+  }
+}
+
+export function softAssert<T extends AnyStrictValidator>(val: unknown, validator: T): asserts val is InferType<T> {
   // It's a soft assert; we tell TypeScript about the type, but we don't need to check it
 };
 
@@ -333,7 +361,7 @@ export const isSet = <T extends AnyStrictValidator>(spec: T, {delimiter}: {delim
   return makeValidator<unknown, Set<InferType<T>>>({
     test: (value, state): value is Set<InferType<T>> => {
       if (Object.getPrototypeOf(value).toString() === `[object Set]`) {
-        softAssert(value instanceof Set);
+        softAssert(value, isInstanceOf(Set));
 
         if (typeof state?.coercions !== `undefined`) {
           if (typeof state?.coercion === `undefined`)
@@ -389,7 +417,7 @@ export const isMap = <TKey extends AnyStrictValidator, TValue extends AnyStrictV
   return makeValidator<unknown, Map<InferType<TKey>, InferType<TValue>>>({
     test: (value, state): value is Map<InferType<TKey>, InferType<TValue>> => {
       if (Object.getPrototypeOf(value).toString() === `[object Map]`) {
-        softAssert(value instanceof Set);
+        softAssert(value, isInstanceOf(Map));
 
         if (typeof state?.coercions !== `undefined`) {
           if (typeof state?.coercion === `undefined`)
