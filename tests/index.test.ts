@@ -496,7 +496,7 @@ describe(`t.fn()`, () => {
       return val * 42;
     });
 
-    expect(() => fn(`foo`)).to.throw();
+    expect(() => fn(`foo` as any)).to.throw();
   });
 
   it(`should accept a function call with valid arguments`, () => {
