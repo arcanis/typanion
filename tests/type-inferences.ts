@@ -1,5 +1,13 @@
 import * as t from '../sources';
 
+declare const unknown: unknown;
+
+type AssertEqual<T, Expected> = [T, Expected] extends [Expected, T] ? true : false;
+
+function assertEqual<U>() {
+  return <V>(val: V, expected: AssertEqual<U, V>) => {};
+}
+
 {
     const schema = t.isArray(t.isString());
     type MyType = t.InferType<typeof schema>;
@@ -97,10 +105,15 @@ import * as t from '../sources';
 }
 
 {
-    t.fn([t.isNumber()], val => {
-        // @ts-expect-error
-        const foo: string = val;
-
-        const bar: number = val;
+    t.fn([t.isNumber(), t.isString()], (val1, val2) => {
+        assertEqual<number>()(val1, true);
+        assertEqual<string>()(val2, true);
     });
+
+    const fn = t.fn([t.isNumber()], val => {
+        return val.toString();
+    });
+
+    let check: [number] = null as any;
+    assertEqual<Parameters<typeof fn>>()(check, true);
 }

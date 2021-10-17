@@ -43,16 +43,25 @@ export function softAssert(cond: boolean): asserts cond {
   // It's a soft assert; we tell TypeScript about the type, but we don't need to check it
 };
 
-export function fn<T extends AnyStrictValidator[], Ret>(validators: T, fn: (...args: {[K in keyof T]: InferType<T[K]>}) => Ret) {
+export type FnValidatedArgument<T extends [] | [AnyStrictValidator, ...AnyStrictValidator[]]> =
+  T extends [AnyStrictValidator, ...AnyStrictValidator[]]
+    ? {[K in keyof T]: InferType<T[K]>}
+    : [];
+  
+export interface FnValidatedFunction<T extends [] | [AnyStrictValidator, ...AnyStrictValidator[]], Ret> {
+  (...args: FnValidatedArgument<T>): Ret;
+};
+
+export function fn<T extends [] | [AnyStrictValidator, ...AnyStrictValidator[]], Ret>(validators: T, fn: (...args: FnValidatedArgument<T>) => Ret): FnValidatedFunction<T, Ret> {
   const isValidArgList = isTuple(validators);
 
-  return (...args: unknown[]) => {
+  return ((...args: FnValidatedArgument<T>) => {
     const check = isValidArgList(args);
     if (!check)
       throw new Error(`Invalid arguments`);
 
     return fn(...args as any);
-  };
+  }) as FnValidatedFunction<T, Ret>;
 }
 
 export function makeValidator<U, V extends U>({test}: {test: StrictTest<U, V>}): StrictValidator<U, V>;
