@@ -488,4 +488,22 @@ describe(`Coercion Tests`, () => {
 
     expect(val).to.deep.equal({val: `42.21`});
   });
-})
+});
+
+describe(`t.fn()`, () => {
+  it(`should reject a function call with invalid arguments`, () => {
+    const fn = t.fn([t.isNumber()], val => {
+      return val * 42;
+    });
+
+    expect(() => fn(`foo`)).to.throw();
+  });
+
+  it(`should accept a function call with valid arguments`, () => {
+    const fn = t.fn([t.isNumber()], val => {
+      return val * 42;
+    });
+
+    expect(fn(2)).to.equal(84);
+  });
+});

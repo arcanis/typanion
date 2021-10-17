@@ -95,3 +95,12 @@ import * as t from '../sources';
 {
     t.isOneOf([] as const);
 }
+
+{
+    t.fn([t.isNumber()], val => {
+        // @ts-expect-error
+        const foo: string = val;
+
+        const bar: number = val;
+    });
+}
