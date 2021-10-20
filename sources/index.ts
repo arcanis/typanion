@@ -105,6 +105,10 @@ export function getPrintable(value: unknown) {
     return `undefined`;
   if (value === ``)
     return `an empty string`;
+  if (typeof value === 'symbol')
+    return value.toString()
+  if (Array.isArray(value))
+    return value.map(item => JSON.stringify(item)).join(', ')
 
   return JSON.stringify(value);
 }
@@ -196,8 +200,12 @@ export function isEnum<T>(enumSpec: T): StrictValidator<unknown, T> {
 
   return makeValidator<unknown, T>({
     test: (value, state): value is T => {
-      if (!values.has(value))
+      if (!values.has(value)) {
+        if (valuesArray.every(item => typeof item === 'string' || typeof item === 'number')) {
+          return pushError(state, `Expected one of: ${getPrintable(valuesArray)} (got ${getPrintable(value)})`);
+        }
         return pushError(state, `Expected a valid enumeration value (got ${getPrintable(value)})`);
+      }
 
       return true;
     },

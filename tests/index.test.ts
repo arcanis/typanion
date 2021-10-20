@@ -3,6 +3,14 @@ import {expect} from 'chai';
 import util     from 'util';
 import * as t   from '../sources';
 
+enum TestEnum{
+  foo = "foo",
+  bar = "bar",
+}
+const testSymbol1 = Symbol()
+const testSymbol2 = Symbol()
+const otherSymbol = Symbol()
+
 const VALIDATION_TESTS: {
   validator: () => t.StrictValidator<unknown, any>;
   tests: [unknown, boolean][];
@@ -61,6 +69,13 @@ const VALIDATION_TESTS: {
     [`foo`, true],
     [`bar`, true],
     [`baz`, false],
+  ],
+}, {
+  validator: () => t.isEnum([testSymbol1, testSymbol2]),
+  tests: [
+    [testSymbol1, true],
+    [testSymbol2, true],
+    [otherSymbol, false],
   ],
 }, {
   validator: () => t.isObject({foo: t.isString()}),
@@ -241,12 +256,27 @@ const ERROR_TESTS: {
 }, {
   validator: () => t.isEnum([`foo`, `bar`]),
   tests: [
-    [`baz`, [`.: Expected a valid enumeration value (got "baz")`]],
+    [`baz`, [`.: Expected one of: "foo", "bar" (got "baz")`]],
+  ],
+}, {
+  validator: () => t.isEnum([5,10,15]),
+  tests: [
+    [42, [`.: Expected one of: 5, 10, 15 (got 42)`]],
   ],
 }, {
   validator: () => t.isEnum({FOO: `foo`, BAR: `bar`}),
   tests: [
-    [`baz`, [`.: Expected a valid enumeration value (got "baz")`]],
+    [`baz`, [`.: Expected one of: "foo", "bar" (got "baz")`]],
+  ],
+}, {
+  validator: () => t.isEnum(TestEnum),
+  tests: [
+    [`baz`, [`.: Expected one of: "foo", "bar" (got "baz")`]],
+  ],
+}, {
+  validator: () => t.isEnum([testSymbol1, testSymbol2]),
+  tests: [
+    [otherSymbol, [`.: Expected a valid enumeration value (got Symbol())`]],
   ],
 }, {
   validator: () => t.isOneOf([t.isString(), t.isBoolean()]),
