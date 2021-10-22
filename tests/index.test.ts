@@ -3,6 +3,14 @@ import {expect} from 'chai';
 import util     from 'util';
 import * as t   from '../sources';
 
+enum TestEnum{
+  foo = "foo",
+  bar = "bar",
+}
+const testSymbol1 = Symbol()
+const testSymbol2 = Symbol()
+const otherSymbol = Symbol()
+
 const VALIDATION_TESTS: {
   validator: () => t.StrictValidator<unknown, any>;
   tests: [unknown, boolean][];
@@ -61,6 +69,13 @@ const VALIDATION_TESTS: {
     [`foo`, true],
     [`bar`, true],
     [`baz`, false],
+  ],
+}, {
+  validator: () => t.isEnum([testSymbol1, testSymbol2]),
+  tests: [
+    [testSymbol1, true],
+    [testSymbol2, true],
+    [otherSymbol, false],
   ],
 }, {
   validator: () => t.isObject({foo: t.isString()}),
@@ -241,12 +256,27 @@ const ERROR_TESTS: {
 }, {
   validator: () => t.isEnum([`foo`, `bar`]),
   tests: [
-    [`baz`, [`.: Expected a valid enumeration value (got "baz")`]],
+    [`baz`, [`.: Expected one of "foo" or "bar" (got "baz")`]],
+  ],
+}, {
+  validator: () => t.isEnum([5,10,15]),
+  tests: [
+    [42, [`.: Expected one of 5, 10, or 15 (got 42)`]],
   ],
 }, {
   validator: () => t.isEnum({FOO: `foo`, BAR: `bar`}),
   tests: [
-    [`baz`, [`.: Expected a valid enumeration value (got "baz")`]],
+    [`baz`, [`.: Expected one of "foo" or "bar" (got "baz")`]],
+  ],
+}, {
+  validator: () => t.isEnum(TestEnum),
+  tests: [
+    [`baz`, [`.: Expected one of "foo" or "bar" (got "baz")`]],
+  ],
+}, {
+  validator: () => t.isEnum([testSymbol1, testSymbol2]),
+  tests: [
+    [otherSymbol, [`.: Expected a valid enumeration value (got <Symbol()>)`]],
   ],
 }, {
   validator: () => t.isOneOf([t.isString(), t.isBoolean()]),
@@ -258,7 +288,7 @@ const ERROR_TESTS: {
   validator: () => t.applyCascade(t.isDict(t.isUnknown()), [t.hasForbiddenKeys([`foo`, `bar`])]),
   tests: [
     [{foo: 42}, [`.: Forbidden property "foo"`]],
-    [{foo: 42, bar: 42}, [`.: Forbidden properties "foo", "bar"`]],
+    [{foo: 42, bar: 42}, [`.: Forbidden properties "foo" and "bar"`]],
     [{baz: 42}, []],
   ],
 }, {
@@ -266,14 +296,14 @@ const ERROR_TESTS: {
   tests: [
     [{foo: 42}, [`.: Missing required property "bar"`]],
     [{foo: 42, bar: 42}, []],
-    [{baz: 42}, [`.: Missing required properties "foo", "bar"`]],
+    [{baz: 42}, [`.: Missing required properties "foo" and "bar"`]],
   ],
 }, {
   validator: () => t.applyCascade(t.isDict(t.isUnknown()), [t.hasMutuallyExclusiveKeys([`foo`, `bar`])]),
   tests: [
     [{foo: 42}, []],
     [{bar: 42}, []],
-    [{foo: 42, bar: 42, baz: 42}, [`.: Mutually exclusive properties "foo", "bar"`]],
+    [{foo: 42, bar: 42, baz: 42}, [`.: Mutually exclusive properties "foo" and "bar"`]],
     [{baz: 42}, []],
   ],
 }, {
@@ -282,7 +312,7 @@ const ERROR_TESTS: {
     [{foo: 42}, []],
     [{bar: 42}, []],
     [{foo: 42, bar: 42}, [`.: Property "foo" forbids using property "bar"`]],
-    [{foo: 42, bar: 42, baz: 42}, [`.: Property "foo" forbids using properties "bar", "baz"`]],
+    [{foo: 42, bar: 42, baz: 42}, [`.: Property "foo" forbids using properties "bar" or "baz"`]],
     [{foo: 42, qux: 42}, []],
   ],
 }, {
@@ -299,11 +329,11 @@ const ERROR_TESTS: {
 }, {
   validator: () => t.applyCascade(t.isDict(t.isUnknown()), [t.hasKeyRelationship(`foo`, t.KeyRelationship.Requires, [`bar`, `baz`])]),
   tests: [
-    [{foo: 42}, [`.: Property "foo" requires using properties "bar", "baz"`]],
+    [{foo: 42}, [`.: Property "foo" requires using properties "bar" and "baz"`]],
     [{bar: 42}, []],
     [{foo: 42, bar: 42}, [`.: Property "foo" requires using property "baz"`]],
     [{foo: 42, bar: 42, baz: 42}, []],
-    [{foo: 42, qux: 42}, [`.: Property "foo" requires using properties "bar", "baz"`]],
+    [{foo: 42, qux: 42}, [`.: Property "foo" requires using properties "bar" and "baz"`]],
   ],
 }];
 

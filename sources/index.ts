@@ -105,8 +105,29 @@ export function getPrintable(value: unknown) {
     return `undefined`;
   if (value === ``)
     return `an empty string`;
+  if (typeof value === 'symbol')
+    return `<${value.toString()}>`;
+  if (Array.isArray(value))
+    return `an array`;
 
   return JSON.stringify(value);
+}
+
+export function getPrintableArray(value: unknown[], conjunction: string) {
+  if (value.length === 0)
+    return `nothing`;
+
+  if (value.length === 1)
+    return getPrintable(value[0]);
+
+  const rest = value.slice(0, -1);
+  const trailing = value[value.length - 1];
+
+  const separator = value.length > 2
+    ? `, ${conjunction} `
+    : ` ${conjunction} `;
+
+  return `${rest.map(value => getPrintable(value)).join(`, `)}${separator}${getPrintable(trailing)}`;
 }
 
 export function computeKey(state: ValidationState | undefined, key: string | number) {
@@ -172,7 +193,7 @@ export function isLiteral<T>(expected: T) {
   return makeValidator<unknown, T>({
     test: (value, state): value is T => {
       if (value !== expected)
-        return pushError(state, `Expected a literal (got ${getPrintable(value)})`);
+        return pushError(state, `Expected ${getPrintable(expected)} (got ${getPrintable(value)})`);
 
       return true;
     },
@@ -190,14 +211,23 @@ export const isString = () => makeValidator<unknown, string>({
 
 export function isEnum<T extends boolean | string | number | null>(values: ReadonlyArray<T>): StrictValidator<unknown, T>;
 export function isEnum<T>(enumSpec: Record<string, T>): StrictValidator<unknown, T>;
-export function isEnum<T>(enumSpec: T): StrictValidator<unknown, T> {
-  const valuesArray = Array.isArray(enumSpec) ? enumSpec : Object.values(enumSpec);
+export function isEnum<T>(enumSpec: any): StrictValidator<unknown, T> {
+  const valuesArray: T[] = Array.isArray(enumSpec) ? enumSpec : Object.values(enumSpec);
+  const isAlphaNum = valuesArray.every(item => typeof item === 'string' || typeof item === 'number');
+
   const values = new Set(valuesArray);
+  if (values.size === 1)
+    return isLiteral<T>([...values][0]);
 
   return makeValidator<unknown, T>({
     test: (value, state): value is T => {
-      if (!values.has(value))
-        return pushError(state, `Expected a valid enumeration value (got ${getPrintable(value)})`);
+      if (!values.has(value as T)) {
+        if (isAlphaNum) {
+          return pushError(state, `Expected one of ${getPrintableArray(valuesArray, `or`)} (got ${getPrintable(value)})`);
+        } else {
+          return pushError(state, `Expected a valid enumeration value (got ${getPrintable(value)})`);
+        }
+      }
 
       return true;
     },
@@ -953,7 +983,7 @@ export const hasRequiredKeys = (requiredKeys: string[]) => {
           problems.push(key);
 
       if (problems.length > 0)
-        return pushError(state, `Missing required ${plural(problems.length, `property`, `properties`)} ${problems.map(name => `"${name}"`).join(`, `)}`);
+        return pushError(state, `Missing required ${plural(problems.length, `property`, `properties`)} ${getPrintableArray(problems, `and`)}`);
 
       return true;
     },
@@ -973,7 +1003,7 @@ export const hasForbiddenKeys = (forbiddenKeys: string[]) => {
           problems.push(key);
 
       if (problems.length > 0)
-        return pushError(state, `Forbidden ${plural(problems.length, `property`, `properties`)} ${problems.map(name => `"${name}"`).join(`, `)}`);
+        return pushError(state, `Forbidden ${plural(problems.length, `property`, `properties`)} ${getPrintableArray(problems, `and`)}`);
 
       return true;
     },
@@ -993,7 +1023,7 @@ export const hasMutuallyExclusiveKeys = (exclusiveKeys: string[]) => {
           used.push(key);
 
       if (used.length > 1)
-        return pushError(state, `Mutually exclusive properties ${used.map(name => `"${name}"`).join(`, `)}`);
+        return pushError(state, `Mutually exclusive properties ${getPrintableArray(used, `and`)}`);
 
       return true;
     },
@@ -1026,6 +1056,10 @@ export const hasKeyRelationship = (subject: string, relationship: KeyRelationshi
   const otherSet = new Set(others);
   const spec = keyRelationships[relationship];
 
+  const conjunction = relationship === KeyRelationship.Forbids
+    ? `or`
+    : `and`;
+
   return makeValidator<{[key: string]: unknown}>({
     test: (value, state) => {
       const keys = new Set(Object.keys(value));
@@ -1038,7 +1072,7 @@ export const hasKeyRelationship = (subject: string, relationship: KeyRelationshi
           problems.push(key);
 
       if (problems.length >= 1)
-        return pushError(state, `Property "${subject}" ${spec.message} ${plural(problems.length, `property`, `properties`)} ${problems.map(name => `"${name}"`).join(`, `)}`);
+        return pushError(state, `Property "${subject}" ${spec.message} ${plural(problems.length, `property`, `properties`)} ${getPrintableArray(problems, conjunction)}`);
 
       return true;
     },
