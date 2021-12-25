@@ -1,7 +1,7 @@
 {
   "name": "typanion",
   "version": "3.7.1",
-  "main": "sources/index",
+  "main": "sources/index.js",
   "license": "MIT",
   "sideEffects": false,
   "repository": {
