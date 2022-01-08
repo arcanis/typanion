@@ -589,7 +589,7 @@ type ObjectType<T> = UndefinedToOptional<RemoveIndex<T>> & ExtractIndex<T>;
 export const isObject = <T extends {[P in keyof T]: AnyStrictValidator}, UnknownValidator extends AnyStrictValidator | null = null>(props: T, {
   extra: extraSpec = null,
 }: {
-  extra?: UnknownValidator,
+  extra?: UnknownValidator | null,
 } = {}) => {
   const specKeys = Object.keys(props);
 
