@@ -33,7 +33,7 @@ Ensure that the values are proper `Date` instances. This predicate supports coer
 const validate = t.isDict(values, {keys?});
 ```
 
-Ensure that the values are all a standard JavaScript objects containing an arbitrary number of fields whose values all match the given schema. The `keys` option can be used to apply a schema on the keys as well (this will always have to be strings, so you'll likely want to use `applyCascade(isString(), [...])` to define the pattern).
+Ensure that the values are all a standard JavaScript objects containing an arbitrary number of fields whose values all match the given schema. The `keys` option can be used to apply a schema on the keys as well (this will always have to be strings, so you'll likely want to use `cascade(isString(), [...])` to define the pattern).
 
 ## `isEnum`
 

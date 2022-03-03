@@ -3,7 +3,7 @@ id: cascading
 title: Cascading predicates
 ---
 
-Cascading predicate don't contribute to refining the value type, but are handful to assert that the value itself follows a particular pattern. You would compose them using `applyCascade` (cf the [Examples](#Examples) section).
+Cascading predicate don't contribute to refining the value type, but are handful to assert that the value itself follows a particular pattern. You would compose them using `cascade` (cf the [Examples](#Examples) section).
 
 ## `hasExactLength`
 
