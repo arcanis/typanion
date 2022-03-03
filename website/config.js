@@ -16,11 +16,12 @@ module.exports = {
 
   sidebar: {
     General: [`overview`, `getting-started`, `examples`],
-    Predicates: [`predicates/cascading`, `predicates/helpers`, `predicates/types`],
+    API: [`predicates/cascading`, `predicates/helpers`, `predicates/types`],
   },
 
   index: {
-    getStarted: `/docs`,
+    overview: `/docs`,
+    getStarted: `/docs/getting-started`,
     features: [{
       title: `TypeScript integration`,
       description: `Typanion provides strong type inference; if your validator functions pass, TypeScript will refine values accordingly.`,

@@ -7,7 +7,10 @@ Cascading predicate don't contribute to refining the value type, but are handful
 
 ## `hasExactLength`
 
-```ts
+```ts twoslash
+import * as t from 'typanion';
+declare const length: number;
+// ---cut---
 const validate = t.hasExactLength(length);
 ```
 
@@ -15,23 +18,37 @@ Ensure that the values all have a `length` property exactly equal to the specifi
 
 ## `hasForbiddenKeys`
 
-```ts
-const validate = t.hasForbiddenKeys([forbiddenKey1, forbiddenKey2, ...]);
+```ts twoslash
+import * as t from 'typanion';
+declare const forbiddenKey1: string;
+declare const forbiddenKey2: string;
+declare const forbiddenKeyN: Array<string>;
+// ---cut---
+const validate = t.hasForbiddenKeys([forbiddenKey1, forbiddenKey2, ...forbiddenKeyN]);
 ```
 
 Ensure that the objects don't contain any of the specified keys.
 
 ## `hasKeyRelationship`
 
-```ts
-const validate = t.hasKeyRelationship(subjectKey, relationship, otherKeys, {ignore?});
+```ts twoslash
+import * as t from 'typanion';
+declare const subjectKey: string;
+declare const relationship: t.KeyRelationship;
+declare const otherKeys: Array<string>;
+declare const ignore: Array<string> | undefined;
+// ---cut---
+const validate = t.hasKeyRelationship(subjectKey, relationship, otherKeys, {ignore});
 ```
 
 Ensure that when the subject key is found, the specified relationship (one of `t.KeyRelationship.Forbids` or `t.KeyRelationship.Requires`) is true. Values listed in `ignore` will lead their properties to be considered missing for the purpose of this check.
 
 ## `hasMaxLength`
 
-```ts
+```ts twoslash
+import * as t from 'typanion';
+declare const length: number;
+// ---cut---
 const validate = t.hasMaxLength(length);
 ```
 
@@ -39,7 +56,10 @@ Ensure that the values all have a `length` property at most equal to the specifi
 
 ## `hasMinLength`
 
-```ts
+```ts twoslash
+import * as t from 'typanion';
+declare const length: number;
+// ---cut---
 const validate = t.hasMinLength(length);
 ```
 
@@ -47,7 +67,10 @@ Ensure that the values all have a `length` property at least equal to the specif
 
 ## `hasMutuallyExclusiveKeys`
 
-```ts
+```ts twoslash
+import * as t from 'typanion';
+declare const keys: Array<string>;
+// ---cut---
 const validate = t.hasMutuallyExclusiveKeys(keys);
 ```
 
@@ -55,7 +78,10 @@ Ensure that the objects don't contain more than one of the specified keys.
 
 ## `hasRequiredKeys`
 
-```ts
+```ts twoslash
+import * as t from 'typanion';
+declare const keys: Array<string>;
+// ---cut---
 const validate = t.hasRequiredKeys(keys);
 ```
 

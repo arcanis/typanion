@@ -4,8 +4,8 @@ import util     from 'util';
 import * as t   from '../sources';
 
 enum TestEnum{
-  foo = "foo",
-  bar = "bar",
+  foo = `foo`,
+  bar = `bar`,
 }
 const testSymbol1 = Symbol()
 const testSymbol2 = Symbol()
@@ -147,7 +147,7 @@ const VALIDATION_TESTS: {
     [{foo: `foo`, bar: `bar`}, false],
   ],
 }, {
-  validator: () => t.isDict(t.isUnknown()),
+  validator: () => t.isRecord(t.isUnknown()),
   tests: [
     [{}, true],
     [{foo: 42}, true],
@@ -156,7 +156,7 @@ const VALIDATION_TESTS: {
     [null, false],
   ],
 }, {
-  validator: () => t.isDict(t.isNumber()),
+  validator: () => t.isRecord(t.isNumber()),
   tests: [
     [{}, true],
     [{foo: 42}, true],
@@ -167,7 +167,7 @@ const VALIDATION_TESTS: {
     [42, false],
   ],
 }, {
-  validator: () => t.isDict(t.isNumber(), {keys: t.applyCascade(t.isString(), [t.isUUID4()])}),
+  validator: () => t.isRecord(t.isNumber(), {keys: t.cascade(t.isString(), [t.isUUID4()])}),
   tests: [
     [{}, true],
     [{[`806af6da-bd31-4a8a-b3dc-a0fafdc3757a`]: 42}, true],
@@ -248,7 +248,7 @@ const ERROR_TESTS: {
     [JSON.parse(`{"__proto__": "foo"}`), [`.__proto__: Unsafe property name`]],
   ],
 }, {
-  validator: () => t.isDict(t.isString()),
+  validator: () => t.isRecord(t.isString()),
   tests: [
     [JSON.parse(`{"constructor": "foo"}`), [`.constructor: Unsafe property name`]],
     [JSON.parse(`{"__proto__": "foo"}`), [`.__proto__: Unsafe property name`]],
@@ -285,21 +285,21 @@ const ERROR_TESTS: {
     [true, []],
   ],
 }, {
-  validator: () => t.applyCascade(t.isDict(t.isUnknown()), [t.hasForbiddenKeys([`foo`, `bar`])]),
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasForbiddenKeys([`foo`, `bar`])]),
   tests: [
     [{foo: 42}, [`.: Forbidden property "foo"`]],
     [{foo: 42, bar: 42}, [`.: Forbidden properties "foo" and "bar"`]],
     [{baz: 42}, []],
   ],
 }, {
-  validator: () => t.applyCascade(t.isDict(t.isUnknown()), [t.hasRequiredKeys([`foo`, `bar`])]),
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasRequiredKeys([`foo`, `bar`])]),
   tests: [
     [{foo: 42}, [`.: Missing required property "bar"`]],
     [{foo: 42, bar: 42}, []],
     [{baz: 42}, [`.: Missing required properties "foo" and "bar"`]],
   ],
 }, {
-  validator: () => t.applyCascade(t.isDict(t.isUnknown()), [t.hasMutuallyExclusiveKeys([`foo`, `bar`])]),
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasMutuallyExclusiveKeys([`foo`, `bar`])]),
   tests: [
     [{foo: 42}, []],
     [{bar: 42}, []],
@@ -307,7 +307,7 @@ const ERROR_TESTS: {
     [{baz: 42}, []],
   ],
 }, {
-  validator: () => t.applyCascade(t.isDict(t.isUnknown()), [t.hasKeyRelationship(`foo`, t.KeyRelationship.Forbids, [`bar`, `baz`])]),
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasKeyRelationship(`foo`, t.KeyRelationship.Forbids, [`bar`, `baz`])]),
   tests: [
     [{foo: 42}, []],
     [{bar: 42}, []],
@@ -316,7 +316,7 @@ const ERROR_TESTS: {
     [{foo: 42, qux: 42}, []],
   ],
 }, {
-  validator: () => t.applyCascade(t.isDict(t.isUnknown()), [t.hasKeyRelationship(`foo`, t.KeyRelationship.Forbids, [`bar`, `baz`], {ignore: [false]})]),
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasKeyRelationship(`foo`, t.KeyRelationship.Forbids, [`bar`, `baz`], {ignore: [false]})]),
   tests: [
     [{foo: 42}, []],
     [{bar: 42}, []],
@@ -327,7 +327,7 @@ const ERROR_TESTS: {
     [{foo: 42, qux: 42}, []],
   ],
 }, {
-  validator: () => t.applyCascade(t.isDict(t.isUnknown()), [t.hasKeyRelationship(`foo`, t.KeyRelationship.Requires, [`bar`, `baz`])]),
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasKeyRelationship(`foo`, t.KeyRelationship.Requires, [`bar`, `baz`])]),
   tests: [
     [{foo: 42}, [`.: Property "foo" requires using properties "bar" and "baz"`]],
     [{bar: 42}, []],
@@ -452,23 +452,23 @@ const COERCION_TESTS: {
     [{foo: `hello,42,true`}, [], {foo: [`hello`, 42, true]}],
   ],
 }, {
-  validator: () => t.isDict(t.isBoolean()),
+  validator: () => t.isRecord(t.isBoolean()),
   tests: [
     [{foo: `true`}, [], {foo: true}],
   ],
 }, {
-  validator: () => t.isDict(t.isOneOf([t.isBoolean()])),
+  validator: () => t.isRecord(t.isOneOf([t.isBoolean()])),
   tests: [
     [{foo: `true`}, [], {foo: true}],
   ],
 }, {
-  validator: () => t.isDict(t.isOneOf([t.isObject({foo: t.isBoolean(), bar: t.isLiteral(`hello`)}), t.isObject({foo: t.isString(), bar: t.isLiteral(`world`)})])),
+  validator: () => t.isRecord(t.isOneOf([t.isObject({foo: t.isBoolean(), bar: t.isLiteral(`hello`)}), t.isObject({foo: t.isString(), bar: t.isLiteral(`world`)})])),
   tests: [
     [{val: {foo: `true`, bar: `hello`}}, [], {val: {foo: true, bar: `hello`}}],
     [{val: {foo: `true`, bar: `world`}}, [], {val: {foo: `true`, bar: `world`}}],
   ],
 }, {
-  validator: () => t.isDict(t.applyCascade(t.isNumber(), [t.isInteger()])),
+  validator: () => t.isRecord(t.cascade(t.isNumber(), t.isInteger())),
   tests: [
     [{val: 42}, [], {val: 42}],
     [{val: `42`}, [], {val: 42}],
@@ -510,7 +510,7 @@ describe(`Coercion Tests`, () => {
   }
 
   it(`Doesn't apply coercion if a cascading predicates fail`, () => {
-    const schema = t.isDict(t.applyCascade(t.isNumber(), [t.isInteger()]));
+    const schema = t.isRecord(t.cascade(t.isNumber(), [t.isInteger()]));
     const val = {val: `42.21`};
 
     const coercions: t.Coercion[] = [];
