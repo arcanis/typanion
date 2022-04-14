@@ -83,7 +83,7 @@ export function softAssert<T extends AnyStrictValidator>(val: unknown, validator
  */
 export function as<T extends AnyStrictValidator>(val: unknown, validator: T, {coerce = false}: {coerce?: boolean} = {}): InferType<T> | undefined {
   if (!coerce)
-    return validator(val) ? val : null;
+    return validator(val) ? val : undefined;
 
   const state = {val};
 
@@ -93,13 +93,10 @@ export function as<T extends AnyStrictValidator>(val: unknown, validator: T, {co
   if (!validator(val, {coercion, coercions}))
     return undefined;
 
-  if (state.val !== val)
-    return state.val as InferType<T>;
-
   for (const [, apply] of coercions)
     apply();
 
-  return val;
+  return state.val;
 }
 
 type FnValidatedArgument<T extends [] | [AnyStrictValidator, ...AnyStrictValidator[]]> =
