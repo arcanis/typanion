@@ -96,7 +96,7 @@ export function as<T extends AnyStrictValidator>(val: unknown, validator: T, {co
   for (const [, apply] of coercions)
     apply();
 
-  return state.val;
+  return state.val as InferType<T>;
 }
 
 type FnValidatedArgument<T extends [] | [AnyStrictValidator, ...AnyStrictValidator[]]> =
