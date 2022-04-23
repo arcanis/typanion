@@ -53,17 +53,27 @@ if (!isBlogPost(userData, {errors})) {
 }
 ```
 
-Finally, you can instruct Typanion to coerce values into the expected types if possible:
+Various helpers can be used to remove boilerplate:
 
 ```ts
-const coercions: t.Coercion[] = [];
+import * as t from 'typanion';
 
-if (isBlogPost(userData, {coercions})) {
-    // Don't forget to apply the changes first
-    for (const coercion of coercions)
-        coercion();
+// Will throw if userData isn't a blogPost
+t.assert(userData, isBlogPost);
 
-    // Will have turned "true" and "false" strings into the proper boolean values
-    console.log(userData.published);
-}
+// Same, but will also return the value (optionally coerced, see below)
+const val = t.as(userData, isBlogPost, {throw: true});
 ```
+
+You can use the `as` helper along with its `coerce` option to optionally tell Typanion that mutating the value is fine:
+
+```ts
+import * as t from 'typanion';
+
+const validatedData = t.as(userData, isBlogPost, {coerce: true, throw: true}))
+
+// Will have turned "true" and "false" strings into the proper boolean values
+console.log(validatedData.published);
+```
+
+Note that coercion may mutate the data received in input. If you do not wish this to happen, consider using [`structuredClone`](https://developer.mozilla.org/en-US/docs/Web/API/structuredClone) to obtain a clone you can pass to the validators.

@@ -384,6 +384,7 @@ export function isSet<T extends AnyStrictValidator>(spec: T, {delimiter}: {delim
  */
 export function isMap<TKey extends AnyStrictValidator, TValue extends AnyStrictValidator>(keySpec: TKey, valueSpec: TValue) {
   const isArrayValidator = isArray(isTuple([keySpec, valueSpec]));
+  const isRecordValidator = isRecord(valueSpec, {keys: keySpec});
 
   return makeValidator<unknown, Map<InferType<TKey>, InferType<TValue>>>({
     test: (value, state): value is Map<InferType<TKey>, InferType<TValue>> => {
@@ -430,11 +431,19 @@ export function isMap<TKey extends AnyStrictValidator, TValue extends AnyStrictV
           return pushError(state, `Unbound coercion result`);
 
         const store = {value};
-        if (!isArrayValidator(value, {...state, coercion: makeCoercionFn(store, `value`)}))
-          return false;
+        if (Array.isArray(value)) {
+          if (!isArrayValidator(value, {...state, coercion: undefined}))
+            return false;
 
-        state.coercions.push([state.p ?? `.`, makeLazyCoercionFn(state.coercion, value, () => new Map(store.value as any))]);
-        return true;
+          state.coercions.push([state.p ?? `.`, makeLazyCoercionFn(state.coercion, value, () => new Map(store.value as any))]);
+          return true;
+        } else {
+          if (!isRecordValidator(value, {...state, coercion: makeCoercionFn(store, `value`)}))
+            return false;
+
+          state.coercions.push([state.p ?? `.`, makeLazyCoercionFn(state.coercion, value, () => new Map(Object.entries(store.value as any)))]);
+          return true;
+        }
       }
 
       return pushError(state, `Expected a map (got ${getPrintable(value)})`);
@@ -488,8 +497,6 @@ export function isTuple<T extends AnyStrictValidatorTuple>(spec: T, {delimiter}:
   });
 };
 
-type DeriveIndexUnlessNull<T extends AnyStrictValidator | null> = T extends null ? {} : InferType<T>;
-
 /**
  * Create a validator that only returns true when the tested value is an
  * object with any amount of properties that must all match the provided
@@ -504,8 +511,25 @@ export function isRecord<T extends AnyStrictValidator>(spec: T, {
 }: {
   keys?: StrictValidator<unknown, string> | null,
 } = {}) {
+  const isArrayValidator = isArray(isTuple([keySpec ?? isString(), spec]));
+
   return makeValidator<unknown, Record<string, InferType<T>>>({
     test: (value, state): value is Record<string, InferType<T>> => {
+      if (Array.isArray(value)) {
+        if (typeof state?.coercions !== `undefined`) {
+          if (typeof state?.coercion === `undefined`)
+            return pushError(state, `Unbound coercion result`);
+
+          if (!isArrayValidator(value, {...state, coercion: undefined}))
+            return false;
+
+          value = Object.fromEntries(value);
+          state.coercions.push([state.p ?? `.`, state.coercion.bind(null, value)]);
+
+          return true;
+        }
+      }
+
       if (typeof value !== `object` || value === null)
         return pushError(state, `Expected an object (got ${getPrintable(value)})`);
 
@@ -570,15 +594,15 @@ type ObjectType<T> = UndefinedToOptional<RemoveIndex<T>> & ExtractIndex<T>;
  * Calling `t.isObject(..., {extra: t.isRecord(t.isUnknown())})` is
  * essentially the same as calling `t.isPartial(...)`.
  */
-export function isObject<T extends {[P in keyof T]: AnyStrictValidator}, UnknownValidator extends AnyStrictValidator | null = null>(props: T, {
+export function isObject<T extends {[P in keyof T]: AnyStrictValidator}, UnknownValidator extends AnyStrictValidator = StrictValidator<unknown, unknown>>(props: T, {
   extra: extraSpec = null,
 }: {
-  extra?: UnknownValidator,
+  extra?: UnknownValidator | null,
 } = {}) {
   const specKeys = Object.keys(props);
 
   // We need to store this type inside an alias, otherwise TS seems to miss the "value is ..." guard
-  type RequestedShape = ObjectType<{[P in keyof T]: InferType<(typeof props)[P]>} & DeriveIndexUnlessNull<UnknownValidator>>;
+  type RequestedShape = ObjectType<{[P in keyof T]: InferType<(typeof props)[P]>} & InferType<UnknownValidator>>;
 
   return makeValidator<unknown, RequestedShape>({
     test: (value, state): value is RequestedShape => {

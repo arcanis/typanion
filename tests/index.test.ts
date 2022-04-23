@@ -474,6 +474,12 @@ const COERCION_TESTS: {
     [{val: `42`}, [], {val: 42}],
     [{val: `42.21`}, [`.val: Expected to be an integer (got 42.21)`]],
   ],
+}, {
+  validator: () => t.isRecord(t.isNumber()),
+  tests: [
+    [[[`val`, 42]], [], {val: 42}],
+    [[[`val`, 42, 12]], [`.[0]: Expected to have a length of exactly 2 elements (got 3)`]],
+  ]
 }];
 
 describe(`Coercion Tests`, () => {
@@ -487,17 +493,12 @@ describe(`Coercion Tests`, () => {
           : `Coerces`;
 
         it(`${what} ${util.format(value)}, as expected`, () => {
-          const errors: string[] = [];
-          const coercions: t.Coercion[] = [];
+          const res = t.as(value, schema, {coerce: true, errors: true});
+          expect(res.errors ?? []).to.deep.equal(errorExpectations);
 
-          const check = schema(value, {errors, coercions});
-          expect(errors).to.deep.equal(errorExpectations);
-          expect(check).to.equal(errorExpectations.length === 0);
-
-          if (check) {
-            for (const [, op] of coercions) op();
+          if (!res.errors) {
             try {
-              expect(value).to.deep.equal(coercionExpectation);
+              expect(res.value).to.deep.equal(coercionExpectation);
             } catch (err) {
               // @ts-ignore
               console.log({value, coercionExpectation});
@@ -535,5 +536,64 @@ describe(`t.fn()`, () => {
     });
 
     expect(fn(2)).to.equal(84);
+  });
+});
+
+describe(`t.as()`, () => {
+  it(`should return a value with "errors" set to "true" if the "errors" option is disabled`, () => {
+    const res = t.as(null, t.isString());
+    expect(res.errors).to.deep.equal(true);
+  });
+
+  it(`should return a value with "errors" set to an array if the "errors" option is enabled`, () => {
+    const res = t.as(null, t.isString(), {errors: true});
+    expect(res.errors).to.deep.equal([`.: Expected a string (got null)`]);
+  });
+
+  it(`should throw an error if the "throw" option is enabled ("errors" disabled)`, () => {
+    expect(() => {
+      t.as(null, t.isString(), {throw: true});
+    }).to.throw(/^Type mismatch$/);
+  });
+
+  it(`should throw an error if the "throw" option is enabled ("errors" enabled)`, () => {
+    expect(() => {
+      t.as(null, t.isString(), {throw: true, errors: true});
+    }).to.throw(/^Type mismatch\n\n- \.: Expected a string \(got null\)$/);
+  });
+
+  it(`should return an object with "errors" set to undefined when the value is valid ("errors" disabled)`, () => {
+    const res = t.as(``, t.isString());
+    expect(res.errors).to.deep.equal(undefined);
+  });
+
+  it(`should return an object with "errors" set to undefined when the value is valid ("errors" enabled)`, () => {
+    const res = t.as(``, t.isString(), {errors: true});
+    expect(res.errors).to.deep.equal(undefined);
+  });
+
+  it(`should return an object with "value" set to the input when the value is valid ("errors" disabled)`, () => {
+    const res = t.as(``, t.isString());
+    expect(res.value).to.deep.equal(``);
+  });
+
+  it(`should return an object with "value" set to the input when the value is valid ("errors" enabled)`, () => {
+    const res = t.as(``, t.isString(), {errors: true});
+    expect(res.value).to.deep.equal(``);
+  });
+
+  it(`should return the input when the value is valid and the "throw" option is enabled`, () => {
+    const res = t.as(``, t.isString(), {throw: true});
+    expect(res).to.deep.equal(``);
+  });
+
+  it(`should return an object with "value" set to the casted input when the value is valid after coercion`, () => {
+    const res = t.as(`42`, t.isNumber(), {coerce: true});
+    expect(res.value).to.deep.equal(42);
+  });
+
+  it(`should cast the input when the value is valid after coercion and the "throw" option is enabled`, () => {
+    const res = t.as(`42`, t.isNumber(), {throw: true, coerce: true});
+    expect(res).to.deep.equal(42);
   });
 });

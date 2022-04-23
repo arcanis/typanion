@@ -78,25 +78,50 @@ export function softAssert<T extends AnyStrictValidator>(val: unknown, validator
 }
 
 /**
- * Check that the value matches the given validator, and returns undefined
- * if it doesn't instead of throwing an error.
+ * Check that the value matches the given validator. Returns a tuple where the
+ * first element is the validated value, and the second the reported errors.
+ * 
+ * If the `errors` field is set to `false` (the default), the error reporting
+ * will be a single boolean. If set to `true`, it'll be an array of strings.
  */
-export function as<T extends AnyStrictValidator>(val: unknown, validator: T, {coerce = false}: {coerce?: boolean} = {}): InferType<T> | undefined {
-  if (!coerce)
-    return validator(val) ? val : undefined;
+export function as<T extends AnyStrictValidator>(value: unknown, validator: T, opts: {coerce?: boolean, errors?: boolean, throw: true}): InferType<T>;
+export function as<T extends AnyStrictValidator>(value: unknown, validator: T, opts: {coerce?: boolean, errors: false, throw?: false}): {value: InferType<T>, errors: undefined} | {value: unknown, errors: true};
+export function as<T extends AnyStrictValidator>(value: unknown, validator: T, opts: {coerce?: boolean, errors: true, throw?: false}): {value: InferType<T>, errors: undefined} | {value: unknown, errors: Array<string>};
+export function as<T extends AnyStrictValidator>(value: unknown, validator: T, opts?: {coerce?: boolean, errors?: boolean, throw?: false}): {value: InferType<T>, errors: undefined} | {value: unknown, errors: Array<string> | true};
+export function as<T extends AnyStrictValidator>(value: unknown, validator: T, {coerce = false, errors: storeErrors, throw: throws}: {coerce?: boolean, errors?: boolean, throw?: boolean} = {}): InferType<T> | {value: InferType<T>, errors: undefined} | {value: unknown, errors: Array<string> | true} {
+  const errors = storeErrors ? [] : undefined;
 
-  const state = {val};
+  if (!coerce) {
+    if (validator(value, {errors})) {
+      return throws ? value : {value, errors: undefined};
+    } else if (!throws) {
+      return {value: undefined as never, errors: errors ?? true};
+    } else {
+      throw new TypeAssertionError({errors})
+    }
+  }
 
-  const coercion = makeCoercionFn(state, `val`);
+  const state = {value};
+
+  const coercion = makeCoercionFn(state, `value`);
   const coercions: Coercion[] = [];
 
-  if (!validator(val, {coercion, coercions}))
-    return undefined;
+  if (!validator(value, {errors, coercion, coercions})) {
+    if (!throws) {
+      return {value: undefined as never, errors: errors ?? true};
+    } else {
+      throw new TypeAssertionError({errors});
+    }
+  }
 
   for (const [, apply] of coercions)
     apply();
 
-  return state.val as InferType<T>;
+  if (throws) {
+    return state.value as InferType<T>;
+  } else {
+    return {value: state.value as InferType<T>, errors: undefined};
+  }
 }
 
 type FnValidatedArgument<T extends [] | [AnyStrictValidator, ...AnyStrictValidator[]]> =

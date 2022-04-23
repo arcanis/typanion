@@ -117,3 +117,16 @@ function assertEqual<U>() {
   let check: [number] = null as any;
   assertEqual<Parameters<typeof fn>>()(check, true);
 }
+
+{
+  const schema = t.isEnum([`a`, `b`]);
+  type MyType = t.InferType<typeof schema>;
+  
+  const res = t.as(null, schema);
+  if (!res.errors) {
+    const foo: MyType = res.value;
+  } else {
+    // @ts-expect-error
+    const foo: MyType = res.value;
+  }
+}
