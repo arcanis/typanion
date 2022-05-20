@@ -42,6 +42,23 @@ function assertEqual<U>() {
 }
 
 {
+  const schemaBase = t.isObject({foo: t.isOptional(t.isNumber())});
+  const schema = t.isObject({...schemaBase.properties, bar: t.isOptional(t.isString())});
+
+  type MyType = t.InferType<typeof schema>;
+  
+  const foo: MyType = {};
+  const bar: MyType = {foo: 42};
+  const baz: MyType = {bar: `foo`};
+
+  // @ts-expect-error
+  const qux: MyType = {foo: `foo`};
+
+  // @ts-expect-error
+  const quux: MyType = {bar: 42};
+}
+
+{
   const schema = t.isEnum([`a`, `b`]);
   type MyType = t.InferType<typeof schema>;
   

@@ -604,7 +604,7 @@ export function isObject<T extends {[P in keyof T]: AnyStrictValidator}, Unknown
   // We need to store this type inside an alias, otherwise TS seems to miss the "value is ..." guard
   type RequestedShape = ObjectType<{[P in keyof T]: InferType<(typeof props)[P]>} & InferType<UnknownValidator>>;
 
-  return makeValidator<unknown, RequestedShape>({
+  const validator = makeValidator<unknown, RequestedShape>({
     test: (value, state): value is RequestedShape => {
       if (typeof value !== `object` || value === null)
         return pushError(state, `Expected an object (got ${getPrintable(value)})`);
@@ -648,6 +648,10 @@ export function isObject<T extends {[P in keyof T]: AnyStrictValidator}, Unknown
 
       return valid;
     },
+  });
+
+  return Object.assign(validator, {
+    properties: props,
   });
 };
 
