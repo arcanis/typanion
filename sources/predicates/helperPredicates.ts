@@ -191,14 +191,14 @@ export function hasAtLeastOneKey(requiredKeys: string[]) {
    });
  }
  
-const checks = {
-  missing: (key: string) => keys.has(key),
-  undefined: (key: string) => keys.has(key) && typeof value[key] !== `undefined`,
-  nil: (key: string) => keys.has(key) && value[key] != null,
-  falsy: (key: string) => keys.has(key) && !!value[key],
+export type MissingType = 'missing' | 'undefined' | 'nil' | 'falsy';
+ 
+const checks: {[index in MissingType]: (keys: Set<string>, key: string, value: Record<string, unknown>) => boolean } = {
+  missing: (keys, key) => keys.has(key),
+  undefined: (key, key, value) => keys.has(key) && typeof value[key] !== `undefined`,
+  nil: (keys, key, value) => keys.has(key) && value[key] != null,
+  falsy: (keys, key, value) => keys.has(key) && !!value[key],
 };
-
-export type MissingType = keyof typeof checks;
 
 /**
  * Create a validator that checks that the tested object contains at most one
@@ -214,7 +214,7 @@ export function hasMutuallyExclusiveKeys(exclusiveKeys: string[], options?: { mi
 
       const used: string[] = [];
       for (const key of exclusiveSet)
-        if (check(key))
+        if (check(keys, key, value))
           used.push(key);
 
       if (used.length > 1)
