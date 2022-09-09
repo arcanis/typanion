@@ -692,7 +692,7 @@ export const isInstanceOf = <T extends new (...args: any) => InstanceType<T>>(co
  * parameter is set to `true`, the behaviour changes so that the validator
  * only returns true when exactly one subspec matches.
  */
- export const isOneOf = <T extends AnyStrictValidator>(specs: ReadonlyArray<T>, {
+export const isOneOf = <T extends AnyStrictValidator>(specs: ReadonlyArray<T>, {
   exclusive = false,
 }: {
   exclusive?: boolean,

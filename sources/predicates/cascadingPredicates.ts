@@ -30,7 +30,7 @@ import {
  * Create a validator that checks that the tested array or string has at least
  * the specified length.
  */
- export function hasMinLength<T extends {length: number}>(length: number) {
+export function hasMinLength<T extends {length: number}>(length: number) {
   return makeValidator<T>({
     test: (value, state) => {
       if (!(value.length >= length))
@@ -60,7 +60,7 @@ export function hasMaxLength<T extends {length: number}>(length: number) {
  * Create a validator that checks that the tested array or string has exactly
  * the specified length.
  */
- export function hasExactLength<T extends {length: number}>(length: number) {
+export function hasExactLength<T extends {length: number}>(length: number) {
   return makeValidator<T>({
     test: (value, state) => {
       if (!(value.length === length))
@@ -77,7 +77,7 @@ export function hasMaxLength<T extends {length: number}>(length: number) {
  * apply before making the check (the result of this transform will be
  * discarded afterwards).
  */
- export function hasUniqueItems<T>({
+export function hasUniqueItems<T>({
   map,
 }: {
   map?: (value: T) => unknown,
@@ -128,7 +128,7 @@ export function isNegative() {
  * Create a validator that checks that the tested number is equal or greater
  * than 0.
  */
- export function isPositive() {
+export function isPositive() {
   return makeValidator<number>({
     test: (value, state) => {
       if (!(value >= 0))
@@ -143,7 +143,7 @@ export function isNegative() {
  * Create a validator that checks that the tested number is equal or greater
  * than the specified reference.
  */
- export function isAtLeast(n: number) {
+export function isAtLeast(n: number) {
   return makeValidator<number>({
     test: (value, state) => {
       if (!(value >= n))
@@ -158,7 +158,7 @@ export function isNegative() {
  * Create a validator that checks that the tested number is equal or smaller
  * than the specified reference.
  */
- export function isAtMost(n: number) {
+export function isAtMost(n: number) {
   return makeValidator<number>({
     test: (value, state) => {
       if (!(value <= n))
@@ -173,7 +173,7 @@ export function isNegative() {
  * Create a validator that checks that the tested number is between the
  * specified references (including the upper boundary).
  */
- export function isInInclusiveRange(a: number, b: number) {
+export function isInInclusiveRange(a: number, b: number) {
   return makeValidator<number>({
     test: (value, state) => {
       if (!(value >= a && value <= b))
@@ -188,7 +188,7 @@ export function isNegative() {
  * Create a validator that checks that the tested number is between the
  * specified references (excluding the upper boundary).
  */
- export function isInExclusiveRange(a: number, b: number) {
+export function isInExclusiveRange(a: number, b: number) {
   return makeValidator<number>({
     test: (value, state) => {
       if (!(value >= a && value < b))
@@ -206,7 +206,7 @@ export function isNegative() {
  * 2^53 wouldn't be a safe integer because 2^53+1 would be rounded to 2^53,
  * which could put your applications at risk when used in loops.
  */
- export function isInteger({
+export function isInteger({
   unsafe = false,
 }: {
   unsafe?: boolean,
