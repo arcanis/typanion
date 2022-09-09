@@ -191,26 +191,26 @@ export function hasAtLeastOneKey(requiredKeys: string[]) {
    });
  }
  
- export type MissingType = 'missing' | 'undefined' | 'nil' | 'falsy';
+const checks = {
+  missing: (key: string) => keys.has(key),
+  undefined: (key: string) => keys.has(key) && typeof value[key] !== `undefined`,
+  nil: (key: string) => keys.has(key) && value[key] != null,
+  falsy: (key: string) => keys.has(key) && !!value[key],
+};
 
- /**
-  * Create a validator that checks that the tested object contains at most one
-  * of the specified keys.
-*/
+export type MissingType = keyof typeof checks;
+
+/**
+ * Create a validator that checks that the tested object contains at most one
+ * of the specified keys.
+ */
 export function hasMutuallyExclusiveKeys(exclusiveKeys: string[], options?: { missingIf: MissingType }) {
   const exclusiveSet = new Set(exclusiveKeys);
+  const check = checks[options?.missingIf ?? 'missing'];
 
   return makeValidator<{[key: string]: unknown}>({
     test: (value, state) => {
       const keys = new Set(Object.keys(value));
-      const checks: {[index in MissingType]: (key: string) => boolean } = {
-        missing: (key: string) => keys.has(key),
-        undefined: (key: string) => keys.has(key) && typeof value[key] !== `undefined`,
-        nil: (key: string) => keys.has(key) && value[key] != null,
-        falsy: (key: string) => keys.has(key) && !!value[key],
-      };
-
-      const check: (key: string) => boolean = checks[options?.missingIf ?? 'missing'];
 
       const used: string[] = [];
       for (const key of exclusiveSet)
