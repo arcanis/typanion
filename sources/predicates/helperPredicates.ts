@@ -195,7 +195,7 @@ export type MissingType = 'missing' | 'undefined' | 'nil' | 'falsy';
  
 const checks: {[index in MissingType]: (keys: Set<string>, key: string, value: Record<string, unknown>) => boolean } = {
   missing: (keys, key) => keys.has(key),
-  undefined: (key, key, value) => keys.has(key) && typeof value[key] !== `undefined`,
+  undefined: (keys, key, value) => keys.has(key) && typeof value[key] !== `undefined`,
   nil: (keys, key, value) => keys.has(key) && value[key] != null,
   falsy: (keys, key, value) => keys.has(key) && !!value[key],
 };
