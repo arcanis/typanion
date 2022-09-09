@@ -70,11 +70,19 @@ Ensure that the values all have a `length` property at least equal to the specif
 ```ts twoslash
 import * as t from 'typanion';
 declare const keys: Array<string>;
+declare const options: { missingIf: t.MissingType }
 // ---cut---
-const validate = t.hasMutuallyExclusiveKeys(keys);
+const validate = t.hasMutuallyExclusiveKeys(keys, options?);
 ```
 
-Ensure that the objects don't contain more than one of the specified keys.
+Ensure that the objects don't contain more than one of the specified keys. Keys will be considered missing based on `options.missingIf`.
+
+Options:
+- `missingIf`:
+  - `missing` (default): the key isn't present.
+  - `undefined`: the key is `undefined`.
+  - `nil`: the key is either `undefined` or `null`.
+  - `falsy`: the key has a falsy value (ex: `0`, `false`, `undefined`, `null`)
 
 ## `hasRequiredKeys`
 

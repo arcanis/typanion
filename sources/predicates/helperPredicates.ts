@@ -191,30 +191,40 @@ export function hasAtLeastOneKey(requiredKeys: string[]) {
    });
  }
  
+ export type MissingType = 'missing' | 'undefined' | 'nil' | 'falsy';
+
  /**
   * Create a validator that checks that the tested object contains at most one
   * of the specified keys.
-  */
- export function hasMutuallyExclusiveKeys(exclusiveKeys: string[]) {
-   const exclusiveSet = new Set(exclusiveKeys);
- 
-   return makeValidator<{[key: string]: unknown}>({
-     test: (value, state) => {
-       const keys = new Set(Object.keys(value));
- 
-       const used: string[] = [];
-       for (const key of exclusiveSet)
-         if (keys.has(key))
-           used.push(key);
- 
-       if (used.length > 1)
-         return pushError(state, `Mutually exclusive properties ${getPrintableArray(used, `and`)}`);
- 
-       return true;
-     },
-   });
- }
- 
+*/
+export function hasMutuallyExclusiveKeys(exclusiveKeys: string[], options?: { missingIf: MissingType }) {
+  const exclusiveSet = new Set(exclusiveKeys);
+
+  return makeValidator<{[key: string]: unknown}>({
+    test: (value, state) => {
+      const keys = new Set(Object.keys(value));
+      const checks: {[index in MissingType]: (key: string) => boolean } = {
+        missing: (key: string) => keys.has(key),
+        undefined: (key: string) => keys.has(key) && typeof value[key] !== `undefined`,
+        nil: (key: string) => keys.has(key) && value[key] != null,
+        falsy: (key: string) => keys.has(key) && !!value[key],
+      };
+
+      const check: (key: string) => boolean = checks[options?.missingIf ?? 'missing'];
+
+      const used: string[] = [];
+      for (const key of exclusiveSet)
+        if (check(key))
+          used.push(key);
+
+      if (used.length > 1)
+        return pushError(state, `Mutually exclusive properties ${getPrintableArray(used, `and`)}`);
+
+      return true;
+    },
+  });
+}
+
  export enum KeyRelationship {
    Forbids = `Forbids`,
    Requires = `Requires`,
