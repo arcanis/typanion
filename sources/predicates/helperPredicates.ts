@@ -147,6 +147,26 @@ export function applyCascade<T extends AnyStrictValidator>(spec: T, ...followups
    });
  }
  
+/**
+* Create a validator that checks that the tested object contains at least one
+* of the specified keys.
+*/
+export function hasAtLeastOneKey(requiredKeys: string[]) {
+  const requiredSet = new Set(requiredKeys);
+
+  return makeValidator<Record<string, unknown>>({
+    test: (value, state) => {
+      const keys = Object.keys(value);
+
+      const valid = keys.some(key => requiredSet.has(key));
+      if (!valid)
+        return pushError(state, `Missing at least one property from ${getPrintableArray(Array.from(requiredSet), `or`)}`);
+
+      return true;
+    },
+  });
+}
+
  /**
   * Create a validator that checks that the tested object contains none of the
   * specified keys.

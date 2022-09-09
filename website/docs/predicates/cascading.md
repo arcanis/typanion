@@ -87,6 +87,17 @@ const validate = t.hasRequiredKeys(keys);
 
 Ensure that the objects contain all of the specified keys.
 
+## `hasAtLeastOneKey`
+
+```ts twoslash
+import * as t from 'typanion';
+declare const keys: Array<string>;
+// ---cut---
+const validate = t.hasAtLeastOneKey(keys);
+```
+
+Ensure that the objects contain at least one of the specified keys.
+
 ## `hasUniqueItems`
 
 ```ts
