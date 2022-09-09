@@ -191,30 +191,40 @@ export function hasAtLeastOneKey(requiredKeys: string[]) {
    });
  }
  
- /**
-  * Create a validator that checks that the tested object contains at most one
-  * of the specified keys.
-  */
- export function hasMutuallyExclusiveKeys(exclusiveKeys: string[]) {
-   const exclusiveSet = new Set(exclusiveKeys);
+export type MissingType = 'missing' | 'undefined' | 'nil' | 'falsy';
  
-   return makeValidator<{[key: string]: unknown}>({
-     test: (value, state) => {
-       const keys = new Set(Object.keys(value));
- 
-       const used: string[] = [];
-       for (const key of exclusiveSet)
-         if (keys.has(key))
-           used.push(key);
- 
-       if (used.length > 1)
-         return pushError(state, `Mutually exclusive properties ${getPrintableArray(used, `and`)}`);
- 
-       return true;
-     },
-   });
- }
- 
+const checks: {[index in MissingType]: (keys: Set<string>, key: string, value: Record<string, unknown>) => boolean } = {
+  missing: (keys, key) => keys.has(key),
+  undefined: (keys, key, value) => keys.has(key) && typeof value[key] !== `undefined`,
+  nil: (keys, key, value) => keys.has(key) && value[key] != null,
+  falsy: (keys, key, value) => keys.has(key) && !!value[key],
+};
+
+/**
+ * Create a validator that checks that the tested object contains at most one
+ * of the specified keys.
+ */
+export function hasMutuallyExclusiveKeys(exclusiveKeys: string[], options?: { missingIf: MissingType }) {
+  const exclusiveSet = new Set(exclusiveKeys);
+  const check = checks[options?.missingIf ?? 'missing'];
+
+  return makeValidator<{[key: string]: unknown}>({
+    test: (value, state) => {
+      const keys = new Set(Object.keys(value));
+
+      const used: string[] = [];
+      for (const key of exclusiveSet)
+        if (check(keys, key, value))
+          used.push(key);
+
+      if (used.length > 1)
+        return pushError(state, `Mutually exclusive properties ${getPrintableArray(used, `and`)}`);
+
+      return true;
+    },
+  });
+}
+
  export enum KeyRelationship {
    Forbids = `Forbids`,
    Requires = `Requires`,

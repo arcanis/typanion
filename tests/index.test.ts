@@ -310,6 +310,52 @@ const ERROR_TESTS: {
   tests: [
     [{foo: 42}, []],
     [{bar: 42}, []],
+    [{foo: undefined, bar: null}, [`.: Mutually exclusive properties "foo" and "bar"`]],
+    [{foo: false, bar: null}, [`.: Mutually exclusive properties "foo" and "bar"`]],
+    [{foo: 42, bar: 42, baz: 42}, [`.: Mutually exclusive properties "foo" and "bar"`]],
+    [{baz: 42}, []],
+  ],
+}, {
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasMutuallyExclusiveKeys([`foo`, `bar`], { missingIf: 'missing' })]),
+  tests: [
+    [{foo: 42}, []],
+    [{bar: 42}, []],
+    [{foo: undefined, bar: null}, [`.: Mutually exclusive properties "foo" and "bar"`]],
+    [{foo: false, bar: null}, [`.: Mutually exclusive properties "foo" and "bar"`]],
+    [{foo: false, bar: 0}, [`.: Mutually exclusive properties "foo" and "bar"`]],
+    [{foo: 42, bar: 42, baz: 42}, [`.: Mutually exclusive properties "foo" and "bar"`]],
+    [{baz: 42}, []],
+  ],
+}, {
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasMutuallyExclusiveKeys([`foo`, `bar`], { missingIf: 'undefined' })]),
+  tests: [
+    [{foo: 42}, []],
+    [{bar: 42}, []],
+    [{foo: undefined, bar: null}, []],
+    [{foo: false, bar: null}, [`.: Mutually exclusive properties "foo" and "bar"`]],
+    [{foo: false, bar: 0}, [`.: Mutually exclusive properties "foo" and "bar"`]],
+    [{foo: 42, bar: 42, baz: 42}, [`.: Mutually exclusive properties "foo" and "bar"`]],
+    [{baz: 42}, []],
+  ],
+}, {
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasMutuallyExclusiveKeys([`foo`, `bar`], { missingIf: 'nil' })]),
+  tests: [
+    [{foo: 42}, []],
+    [{bar: 42}, []],
+    [{foo: undefined, bar: null}, []],
+    [{foo: false, bar: null}, []],
+    [{foo: false, bar: 0}, [`.: Mutually exclusive properties "foo" and "bar"`]],
+    [{foo: 42, bar: 42, baz: 42}, [`.: Mutually exclusive properties "foo" and "bar"`]],
+    [{baz: 42}, []],
+  ],
+}, {
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasMutuallyExclusiveKeys([`foo`, `bar`], { missingIf: 'falsy' })]),
+  tests: [
+    [{foo: 42}, []],
+    [{bar: 42}, []],
+    [{foo: undefined, bar: null}, []],
+    [{foo: false, bar: null}, []],
+    [{foo: false, bar: 0}, []],
     [{foo: 42, bar: 42, baz: 42}, [`.: Mutually exclusive properties "foo" and "bar"`]],
     [{baz: 42}, []],
   ],
