@@ -299,6 +299,13 @@ const ERROR_TESTS: {
     [{baz: 42}, [`.: Missing required properties "foo" and "bar"`]],
   ],
 }, {
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasAtLeastOneKey([`foo`, `bar`])]),
+  tests: [
+    [{foo: 42}, []],
+    [{foo: 42, bar: 42}, []],
+    [{baz: 42}, [`.: Missing at least one property from "foo" or "bar"`]],
+  ],
+}, {
   validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasMutuallyExclusiveKeys([`foo`, `bar`])]),
   tests: [
     [{foo: 42}, []],
