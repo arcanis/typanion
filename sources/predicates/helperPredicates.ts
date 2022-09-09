@@ -159,7 +159,6 @@ export function hasAtLeastOneKey(requiredKeys: string[]) {
       const keys = Object.keys(value);
 
       const valid = keys.some(key => requiredSet.has(key));
-
       if (!valid)
         return pushError(state, `Missing at least one property from ${getPrintableArray(Array.from(requiredSet), `or`)}`);
 
