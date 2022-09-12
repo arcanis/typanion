@@ -123,12 +123,22 @@ export function isNullable<T extends AnyStrictValidator>(spec: T) {
   });
 }
 
+export type MissingType = 'missing' | 'undefined' | 'nil' | 'falsy';
+
+const checks: {[index in MissingType]: (keys: Set<string>, key: string, value: Record<string, unknown>) => boolean } = {
+  missing: (keys, key) => keys.has(key),
+  undefined: (keys, key, value) => keys.has(key) && typeof value[key] !== `undefined`,
+  nil: (keys, key, value) => keys.has(key) && value[key] != null,
+  falsy: (keys, key, value) => keys.has(key) && !!value[key],
+};
+
 /**
  * Create a validator that checks that the tested object contains the specified
  * keys.
- */
-export function hasRequiredKeys(requiredKeys: string[]) {
+*/
+export function hasRequiredKeys(requiredKeys: string[], options?: { missingIf: MissingType }) {
   const requiredSet = new Set(requiredKeys);
+  const check = checks[options?.missingIf ?? 'missing'];
 
   return makeValidator<Record<string, unknown>>({
     test: (value, state) => {
@@ -136,7 +146,7 @@ export function hasRequiredKeys(requiredKeys: string[]) {
 
       const problems: string[] = [];
       for (const key of requiredSet)
-        if (!keys.has(key))
+        if (!check(keys, key, value))
           problems.push(key);
 
       if (problems.length > 0)
@@ -151,14 +161,15 @@ export function hasRequiredKeys(requiredKeys: string[]) {
 * Create a validator that checks that the tested object contains at least one
 * of the specified keys.
 */
-export function hasAtLeastOneKey(requiredKeys: string[]) {
+export function hasAtLeastOneKey(requiredKeys: string[], options?: { missingIf: MissingType }) {
   const requiredSet = new Set(requiredKeys);
+  const check = checks[options?.missingIf ?? 'missing'];
 
   return makeValidator<Record<string, unknown>>({
     test: (value, state) => {
       const keys = Object.keys(value);
 
-      const valid = keys.some(key => requiredSet.has(key));
+      const valid = keys.some(key => check(requiredSet, key, value));
       if (!valid)
         return pushError(state, `Missing at least one property from ${getPrintableArray(Array.from(requiredSet), `or`)}`);
 
@@ -170,9 +181,10 @@ export function hasAtLeastOneKey(requiredKeys: string[]) {
 /**
  * Create a validator that checks that the tested object contains none of the
  * specified keys.
- */
-export function hasForbiddenKeys(forbiddenKeys: string[]) {
+*/
+export function hasForbiddenKeys(forbiddenKeys: string[], options?: { missingIf: MissingType }) {
   const forbiddenSet = new Set(forbiddenKeys);
+  const check = checks[options?.missingIf ?? 'missing'];
 
   return makeValidator<{[key: string]: unknown}>({
     test: (value, state) => {
@@ -180,7 +192,7 @@ export function hasForbiddenKeys(forbiddenKeys: string[]) {
 
       const problems: string[] = [];
       for (const key of forbiddenSet)
-        if (keys.has(key))
+        if (check(keys, key, value))
           problems.push(key);
 
       if (problems.length > 0)
@@ -190,15 +202,6 @@ export function hasForbiddenKeys(forbiddenKeys: string[]) {
     },
   });
 }
-
-export type MissingType = 'missing' | 'undefined' | 'nil' | 'falsy';
- 
-const checks: {[index in MissingType]: (keys: Set<string>, key: string, value: Record<string, unknown>) => boolean } = {
-  missing: (keys, key) => keys.has(key),
-  undefined: (keys, key, value) => keys.has(key) && typeof value[key] !== `undefined`,
-  nil: (keys, key, value) => keys.has(key) && value[key] != null,
-  falsy: (keys, key, value) => keys.has(key) && !!value[key],
-};
 
 /**
  * Create a validator that checks that the tested object contains at most one
