@@ -23,11 +23,12 @@ import * as t from 'typanion';
 declare const forbiddenKey1: string;
 declare const forbiddenKey2: string;
 declare const forbiddenKeyN: Array<string>;
+declare const options: { missingIf: t.MissingType }
 // ---cut---
-const validate = t.hasForbiddenKeys([forbiddenKey1, forbiddenKey2, ...forbiddenKeyN]);
+const validate = t.hasForbiddenKeys([forbiddenKey1, forbiddenKey2, ...forbiddenKeyN], options?);
 ```
 
-Ensure that the objects don't contain any of the specified keys.
+Ensure that the objects don't contain any of the specified keys. (cf [`hasMutuallyExclusiveKeys`](#hasMutuallyExclusiveKeys) for the `options` parameter)
 
 ## `hasKeyRelationship`
 
@@ -89,22 +90,24 @@ Options:
 ```ts twoslash
 import * as t from 'typanion';
 declare const keys: Array<string>;
+declare const options: { missingIf: t.MissingType }
 // ---cut---
-const validate = t.hasRequiredKeys(keys);
+const validate = t.hasRequiredKeys(keys, options?);
 ```
 
-Ensure that the objects contain all of the specified keys.
+Ensure that the objects contain all of the specified keys. (cf [`hasMutuallyExclusiveKeys`](#hasMutuallyExclusiveKeys) for the `options` parameter)
 
 ## `hasAtLeastOneKey`
 
 ```ts twoslash
 import * as t from 'typanion';
 declare const keys: Array<string>;
+declare const options: { missingIf: t.MissingType }
 // ---cut---
-const validate = t.hasAtLeastOneKey(keys);
+const validate = t.hasAtLeastOneKey(keys, options?);
 ```
 
-Ensure that the objects contain at least one of the specified keys.
+Ensure that the objects contain at least one of the specified keys. (cf [`hasMutuallyExclusiveKeys`](#hasMutuallyExclusiveKeys) for the `options` parameter)
 
 ## `hasUniqueItems`
 

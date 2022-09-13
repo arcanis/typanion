@@ -288,6 +288,49 @@ const ERROR_TESTS: {
   validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasForbiddenKeys([`foo`, `bar`])]),
   tests: [
     [{foo: 42}, [`.: Forbidden property "foo"`]],
+    [{foo: undefined, bar: null}, [`.: Forbidden properties "foo" and "bar"`]],
+    [{foo: false, bar: null}, [`.: Forbidden properties "foo" and "bar"`]],
+    [{foo: false, bar: 0}, [`.: Forbidden properties "foo" and "bar"`]],
+    [{foo: 42, bar: 42}, [`.: Forbidden properties "foo" and "bar"`]],
+    [{baz: 42}, []],
+  ],
+}, {
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasForbiddenKeys([`foo`, `bar`], { missingIf: 'missing' })]),
+  tests: [
+    [{foo: 42}, [`.: Forbidden property "foo"`]],
+    [{foo: undefined, bar: null}, [`.: Forbidden properties "foo" and "bar"`]],
+    [{foo: false, bar: null}, [`.: Forbidden properties "foo" and "bar"`]],
+    [{foo: false, bar: 0}, [`.: Forbidden properties "foo" and "bar"`]],
+    [{foo: 42, bar: 42}, [`.: Forbidden properties "foo" and "bar"`]],
+    [{baz: 42}, []],
+  ],
+}, {
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasForbiddenKeys([`foo`, `bar`], { missingIf: 'undefined' })]),
+  tests: [
+    [{foo: 42}, [`.: Forbidden property "foo"`]],
+    [{foo: undefined, bar: null}, [`.: Forbidden property "bar"`]],
+    [{foo: false, bar: null}, [`.: Forbidden properties "foo" and "bar"`]],
+    [{foo: false, bar: 0}, [`.: Forbidden properties "foo" and "bar"`]],
+    [{foo: 42, bar: 42}, [`.: Forbidden properties "foo" and "bar"`]],
+    [{baz: 42}, []],
+  ],
+}, {
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasForbiddenKeys([`foo`, `bar`], { missingIf: 'nil' })]),
+  tests: [
+    [{foo: 42}, [`.: Forbidden property "foo"`]],
+    [{foo: undefined, bar: null}, []],
+    [{foo: false, bar: null}, [`.: Forbidden property "foo"`]],
+    [{foo: false, bar: 0}, [`.: Forbidden properties "foo" and "bar"`]],
+    [{foo: 42, bar: 42}, [`.: Forbidden properties "foo" and "bar"`]],
+    [{baz: 42}, []],
+  ],
+}, {
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasForbiddenKeys([`foo`, `bar`], { missingIf: 'falsy' })]),
+  tests: [
+    [{foo: 42}, [`.: Forbidden property "foo"`]],
+    [{foo: undefined, bar: null}, []],
+    [{foo: false, bar: null}, []],
+    [{foo: false, bar: 0}, []],
     [{foo: 42, bar: 42}, [`.: Forbidden properties "foo" and "bar"`]],
     [{baz: 42}, []],
   ],
@@ -296,6 +339,49 @@ const ERROR_TESTS: {
   tests: [
     [{foo: 42}, [`.: Missing required property "bar"`]],
     [{foo: 42, bar: 42}, []],
+    [{foo: undefined, bar: null}, []],
+    [{foo: false, bar: null}, []],
+    [{foo: false, bar: 0}, []],
+    [{baz: 42}, [`.: Missing required properties "foo" and "bar"`]],
+  ],
+}, {
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasRequiredKeys([`foo`, `bar`], { missingIf: 'missing' })]),
+  tests: [
+    [{foo: 42}, [`.: Missing required property "bar"`]],
+    [{foo: 42, bar: 42}, []],
+    [{foo: undefined, bar: null}, []],
+    [{foo: false, bar: null}, []],
+    [{foo: false, bar: 0}, []],
+    [{baz: 42}, [`.: Missing required properties "foo" and "bar"`]],
+  ],
+}, {
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasRequiredKeys([`foo`, `bar`], { missingIf: 'undefined' })]),
+  tests: [
+    [{foo: 42}, [`.: Missing required property "bar"`]],
+    [{foo: 42, bar: 42}, []],
+    [{foo: undefined, bar: null}, [`.: Missing required property "foo"`]],
+    [{foo: false, bar: null}, []],
+    [{foo: false, bar: 0}, []],
+    [{baz: 42}, [`.: Missing required properties "foo" and "bar"`]],
+  ],
+}, {
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasRequiredKeys([`foo`, `bar`], { missingIf: 'nil' })]),
+  tests: [
+    [{foo: 42}, [`.: Missing required property "bar"`]],
+    [{foo: 42, bar: 42}, []],
+    [{foo: undefined, bar: null}, [`.: Missing required properties "foo" and "bar"`]],
+    [{foo: false, bar: null}, [`.: Missing required property "bar"`]],
+    [{foo: false, bar: 0}, []],
+    [{baz: 42}, [`.: Missing required properties "foo" and "bar"`]],
+  ],
+}, {
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasRequiredKeys([`foo`, `bar`], { missingIf: 'falsy' })]),
+  tests: [
+    [{foo: 42}, [`.: Missing required property "bar"`]],
+    [{foo: 42, bar: 42}, []],
+    [{foo: undefined, bar: null}, [`.: Missing required properties "foo" and "bar"`]],
+    [{foo: false, bar: null}, [`.: Missing required properties "foo" and "bar"`]],
+    [{foo: false, bar: 0}, [`.: Missing required properties "foo" and "bar"`]],
     [{baz: 42}, [`.: Missing required properties "foo" and "bar"`]],
   ],
 }, {
@@ -303,6 +389,49 @@ const ERROR_TESTS: {
   tests: [
     [{foo: 42}, []],
     [{foo: 42, bar: 42}, []],
+    [{foo: undefined, bar: null}, []],
+    [{foo: false, bar: null}, []],
+    [{foo: false, bar: 0}, []],
+    [{baz: 42}, [`.: Missing at least one property from "foo" or "bar"`]],
+  ],
+}, {
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasAtLeastOneKey([`foo`, `bar`], { missingIf: 'missing' })]),
+  tests: [
+    [{foo: 42}, []],
+    [{foo: 42, bar: 42}, []],
+    [{foo: undefined, bar: null}, []],
+    [{foo: false, bar: null}, []],
+    [{foo: false, bar: 0}, []],
+    [{baz: 42}, [`.: Missing at least one property from "foo" or "bar"`]],
+  ],
+}, {
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasAtLeastOneKey([`foo`, `bar`], { missingIf: 'undefined' })]),
+  tests: [
+    [{foo: 42}, []],
+    [{foo: 42, bar: 42}, []],
+    [{foo: undefined, bar: null}, []],
+    [{foo: false, bar: null}, []],
+    [{foo: false, bar: 0}, []],
+    [{baz: 42}, [`.: Missing at least one property from "foo" or "bar"`]],
+  ],
+}, {
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasAtLeastOneKey([`foo`, `bar`], { missingIf: 'nil' })]),
+  tests: [
+    [{foo: 42}, []],
+    [{foo: 42, bar: 42}, []],
+    [{foo: undefined, bar: null}, [`.: Missing at least one property from "foo" or "bar"`]],
+    [{foo: false, bar: null}, []],
+    [{foo: false, bar: 0}, []],
+    [{baz: 42}, [`.: Missing at least one property from "foo" or "bar"`]],
+  ],
+}, {
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasAtLeastOneKey([`foo`, `bar`], { missingIf: 'falsy' })]),
+  tests: [
+    [{foo: 42}, []],
+    [{foo: 42, bar: 42}, []],
+    [{foo: undefined, bar: null}, [`.: Missing at least one property from "foo" or "bar"`]],
+    [{foo: false, bar: null}, [`.: Missing at least one property from "foo" or "bar"`]],
+    [{foo: false, bar: 0}, [`.: Missing at least one property from "foo" or "bar"`]],
     [{baz: 42}, [`.: Missing at least one property from "foo" or "bar"`]],
   ],
 }, {
