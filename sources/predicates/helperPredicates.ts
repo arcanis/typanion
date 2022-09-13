@@ -136,7 +136,7 @@ const checks: {[index in MissingType]: (keys: Set<string>, key: string, value: R
  * Create a validator that checks that the tested object contains the specified
  * keys.
 */
-export function hasRequiredKeys(requiredKeys: string[], options?: { missingIf: MissingType }) {
+export function hasRequiredKeys(requiredKeys: string[], options?: { missingIf?: MissingType }) {
   const requiredSet = new Set(requiredKeys);
   const check = checks[options?.missingIf ?? 'missing'];
 
@@ -161,7 +161,7 @@ export function hasRequiredKeys(requiredKeys: string[], options?: { missingIf: M
 * Create a validator that checks that the tested object contains at least one
 * of the specified keys.
 */
-export function hasAtLeastOneKey(requiredKeys: string[], options?: { missingIf: MissingType }) {
+export function hasAtLeastOneKey(requiredKeys: string[], options?: { missingIf?: MissingType }) {
   const requiredSet = new Set(requiredKeys);
   const check = checks[options?.missingIf ?? 'missing'];
 
@@ -182,7 +182,7 @@ export function hasAtLeastOneKey(requiredKeys: string[], options?: { missingIf: 
  * Create a validator that checks that the tested object contains none of the
  * specified keys.
 */
-export function hasForbiddenKeys(forbiddenKeys: string[], options?: { missingIf: MissingType }) {
+export function hasForbiddenKeys(forbiddenKeys: string[], options?: { missingIf?: MissingType }) {
   const forbiddenSet = new Set(forbiddenKeys);
   const check = checks[options?.missingIf ?? 'missing'];
 
