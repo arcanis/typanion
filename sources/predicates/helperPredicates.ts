@@ -207,7 +207,7 @@ export function hasForbiddenKeys(forbiddenKeys: string[], options?: { missingIf?
  * Create a validator that checks that the tested object contains at most one
  * of the specified keys.
  */
-export function hasMutuallyExclusiveKeys(exclusiveKeys: string[], options?: { missingIf: MissingType }) {
+export function hasMutuallyExclusiveKeys(exclusiveKeys: string[], options?: { missingIf?: MissingType }) {
   const exclusiveSet = new Set(exclusiveKeys);
   const check = checks[options?.missingIf ?? 'missing'];
 
