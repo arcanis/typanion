@@ -1,6 +1,8 @@
 {
   "name": "typanion",
-  "version": "3.12.0",
+  "description": "Simple runtime TypeScript validator library",
+  "homepage": "https://mael.dev/typanion/",
+  "version": "3.12.1",
   "main": "sources/index",
   "license": "MIT",
   "sideEffects": false,
