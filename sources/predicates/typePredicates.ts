@@ -209,6 +209,43 @@ export function isNumber() {
 }
 
 /**
+ * Important: This validator only makes sense when used in conjunction with
+ * coercion! It will always error when used without.
+ * 
+ * Create a validator that only returns true when the tested value is a
+ * JSON representation of the expected type. Refines the type to the
+ * expected type, and casts the value into its inner value.
+ */
+export function isPayload<T extends AnyStrictValidator>(spec: T) {
+  return makeValidator<unknown, InferType<T>>({
+    test: (value, state): value is InferType<T> => {
+      if (typeof state?.coercions === `undefined`)
+        return pushError(state, `The isPayload predicate can only be used with coercion enabled`);
+
+      if (typeof state.coercion === `undefined`)
+        return pushError(state, `Unbound coercion result`);
+
+      if (typeof value !== `string`)
+        return pushError(state, `Expected a string (got ${getPrintable(value)})`);
+
+      let inner: unknown;
+      try {
+        inner = JSON.parse(value);
+      } catch {
+        return pushError(state, `Expected a JSON string (got ${getPrintable(value)})`);
+      }
+
+      const wrapper = {value: inner};
+      if (!spec(inner, {...state, coercion: makeCoercionFn(wrapper, `value`)}))
+        return false;
+
+      state.coercions.push([state.p ?? `.`, state.coercion.bind(null, wrapper.value)]);
+      return true;
+    },
+  });
+}
+
+/**
  * Create a validator that only returns true when the tested value is a
  * valid date. Refines the type to `Date`.
  * 

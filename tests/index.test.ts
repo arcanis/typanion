@@ -662,6 +662,15 @@ const COERCION_TESTS: {
     [[[`val`, 42]], [], {val: 42}],
     [[[`val`, 42, 12]], [`.[0]: Expected to have a length of exactly 2 elements (got 3)`]],
   ]
+}, {
+  validator: () => t.isPayload(t.isObject({foo: t.isBoolean()})),
+  tests: [
+    [`{"foo": true}`, [], {foo: true}],
+    [`{"foo": 1}`, [], {foo: true}],
+    [`{"foo": 0}`, [], {foo: false}],
+    [`{"foo": "true"}`, [], {foo: true}],
+    [`{"foo": "false"}`, [], {foo: false}],
+  ],
 }];
 
 describe(`Coercion Tests`, () => {
