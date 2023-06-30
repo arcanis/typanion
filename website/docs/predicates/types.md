@@ -21,7 +21,7 @@ Ensure that the values are all booleans. Prefer `isLiteral` if you wish to speci
 
 ## `isDate`
 
-```
+```ts
 const validate = t.isDate();
 ```
 
@@ -88,6 +88,14 @@ const validate = t.isPartial(props);
 ```
 
 Same as `isObject`, but allows any number of extraneous properties.
+
+## `isPayload`
+
+```ts
+const validate = t.isPayload(spec);
+```
+
+Ensure that the values are JSON string whose parsed representation match the given validator. Unlike [`isJSON`](cascading.md#isJSON), `isPayload` will coerce the original value to match the nested spec. The drawback, however, is that it can only be used if the coercion is enabled, as it will otherwise always fail (that's because if it were to pass, then the resulting type refinement would be incorrect).
 
 ## `isSet`
 

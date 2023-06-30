@@ -179,7 +179,7 @@ Ensure that the values are round safe integers (enabling `unsafe` will allow [un
 const validate = t.isJSON(schema?);
 ```
 
-Ensure that the values are valid JSON, and optionally match them against a nested schema.
+Ensure that the values are valid JSON, and optionally match them against a nested schema. Because it's a cascading predicate, it has no bearing on the type inference, and as a result doesn't support coercion. For a JSON predicate that supports coercion, check [`isPayload`](types.md#isPayload).
 
 ## `isLowerCase`
 
