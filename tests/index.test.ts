@@ -509,6 +509,17 @@ const ERROR_TESTS: {
     [{foo: 42, qux: 42}, []],
   ],
 }, {
+  validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasKeyRelationship(`foo`, t.KeyRelationship.Forbids, [`bar`, `baz`], {missingIf: `falsy`})]),
+  tests: [
+    [{foo: 42}, []],
+    [{bar: 42}, []],
+    [{foo: false, bar: 42}, []],
+    [{foo: 42, bar: false}, []],
+    [{foo: 42, bar: false, baz: false}, []],
+    [{foo: 42, bar: false, baz: 42}, [`.: Property "foo" forbids using property "baz"`]],
+    [{foo: 42, qux: 42}, []],
+  ],
+}, {
   validator: () => t.cascade(t.isRecord(t.isUnknown()), [t.hasKeyRelationship(`foo`, t.KeyRelationship.Requires, [`bar`, `baz`])]),
   tests: [
     [{foo: 42}, [`.: Property "foo" requires using properties "bar" and "baz"`]],

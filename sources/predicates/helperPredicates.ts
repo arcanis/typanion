@@ -248,12 +248,9 @@ const keyRelationships = {
  * Create a validator that checks that, when the specified subject property is
  * set, the relationship is satisfied.
  */
-export function hasKeyRelationship(subject: string, relationship: KeyRelationship, others: string[], {
-  ignore = [],
-}: {
-  ignore?: any[],
-} = {}) {
-  const skipped = new Set(ignore);
+export function hasKeyRelationship(subject: string, relationship: KeyRelationship, others: string[], options?: { ignore?: any[], missingIf?: MissingType }) {
+  const skipped = new Set(options?.ignore ?? []);
+  const check = checks[options?.missingIf ?? 'missing'];
 
   const otherSet = new Set(others);
   const spec = keyRelationships[relationship];
@@ -265,12 +262,12 @@ export function hasKeyRelationship(subject: string, relationship: KeyRelationshi
   return makeValidator<{[key: string]: unknown}>({
     test: (value, state) => {
       const keys = new Set(Object.keys(value));
-      if (!keys.has(subject) || skipped.has(value[subject]))
+      if (!check(keys, subject, value) || skipped.has(value[subject]))
         return true;
 
       const problems: string[] = [];
       for (const key of otherSet)
-        if ((keys.has(key) && !skipped.has(value[key])) !== spec.expect)
+        if ((check(keys, key, value) && !skipped.has(value[key])) !== spec.expect)
           problems.push(key);
 
       if (problems.length >= 1)
