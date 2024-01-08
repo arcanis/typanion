@@ -31,7 +31,8 @@
     "test": "yarn tsc && TS_NODE_TRANSPILE_ONLY=true mocha --require ts-node/register --extension ts tests/**/*.test.ts"
   },
   "publishConfig": {
-    "main": "lib/index"
+    "main": "lib/index",
+    "module": "lib/index.mjs"
   },
   "files": [
     "lib"
